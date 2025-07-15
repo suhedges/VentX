@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phone Stock Manager</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico">
+
+<style>
+  :root{--blue:#2563eb;--gray:#1f2937;font-family:system-ui}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body,html{height:100%}
+  body{display:flex;flex-direction:column;background:#f8fafc}
+
+  /* Shared */
+  button{border:none;border-radius:6px;padding:.5rem 1rem;font-size:1rem;cursor:pointer}
+  .sec{background:#e5e7eb}
+  .pri{background:var(--blue);color:#fff}
+
+  /* dialogs – force true centering on every viewport */
+  dialog{border:none;border-radius:8px;padding:1rem;width:92%;max-width:420px;
+         position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);}
+  dialog::backdrop{background:#0007}
+  video{width:100%;border-radius:8px}
+  h2{margin-bottom:1rem}
+
+  /* Screens */
+  .screen{flex:1;display:none;flex-direction:column}
+  .show{display:flex}
+
+  /* Login */
+  #login form{margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
+              padding:2rem;border-radius:8px;background:#fff}
+  #login label{display:block;margin-top:1rem;font-weight:600}
+  #login input{width:100%;padding:.45rem;border:1px solid #cbd5e1;border-radius:4px;font-size:1rem;margin-top:.25rem}
+
+  /* Warehouses */
+  #wh header{background:var(--gray);color:#fff;padding:.8rem 1rem;font-size:1.25rem}
+  #wh ul{list-style:none;padding:1rem;gap:.6rem;display:flex;flex-direction:column}
+  #wh li{padding:.7rem .9rem;border:1px solid #d1d5db;border-radius:6px;
+        display:flex;justify-content:space-between;align-items:center;background:#fff}
+
+  /* Main */
+  #main header{display:flex;gap:.6rem;background:var(--gray);color:#fff;
+               padding:.7rem .9rem;align-items:center}
+  #main header span{margin-left:auto}
+  #items{flex:1;overflow:auto;padding:1rem;list-style:none}
+  #items li{margin:.25rem 0;padding:.4rem .6rem;border:1px solid #d1d5db;
+            border-radius:6px;display:flex;justify-content:space-between;background:#fff}
+  #items li:hover{cursor:pointer;background:#eceded}
+  #fab{position:fixed;right:1rem;bottom:1rem;width:56px;height:56px;
+       background:var(--blue);color:#fff;border:none;border-radius:50%;
+       font-size:28px;box-shadow:0 4px 12px #0004}
+  .meta{display:block;font-size:.8rem;color:#555;margin-top:.15rem}
+</style>
+</head>
+<body>
+
+<!----- LOGIN ----->
+<section id="login" class="screen show">
+  <form id="loginForm">
+    <h2 align="center">Login</h2>
+    <label>Username
+      <input id="l_user" required>
+    </label>
+    <label>Password
+      <input id="l_pass" type="password" required>
+    </label>
+    <button class="pri" style="margin-top:1.5rem;width:100%">Sign in</button>
+  </form>
+</section>
+
+<!----- WAREHOUSES ----->
+<section id="wh" class="screen">
+  <header>Warehouses</header>
+  <ul id="whList"></ul>
+  <button id="addWh" class="pri" style="margin:1rem">＋ Add Warehouse</button>
+</section>
+
+<!----- MAIN ----->
+<section id="main" class="screen">
+  <header>
+    <button id="backWh" class="sec">Warehouses</button>
+    <button id="impBtn"  class="sec">Import</button>
+    <button id="tmplBtn" class="sec">Download&nbsp;Template</button>
+    <span id="count"></span>
+  </header>
+  <ul id="items"></ul>
+  <button id="fab" title="Scan product">📷</button>
+</section>
+
+<!----- SCAN DIALOG ----->
+<dialog id="scanDlg">
+  <video id="cam" playsinline></video>
+  <p align="center">Point camera at barcode…</p>
+  <button class="sec" id="scanCancel">Cancel</button>
+</dialog>
+
+<!----- PRODUCT MANAGER ----->
+<dialog id="prodDlg">
+  <form id="prodForm">
+    <h3 id="hdr"></h3>
+    <label>Internal Part <input id="p_internal" required></label>
+    <label>Custom Part <input id="p_custom"></label>
+    <label>UPC
+      <div style="display:flex;gap:.5rem">
+        <input id="p_upc" style="flex:1">
+        <button type="button" class="sec" onclick="scanIntoUPC()">Scan&nbsp;UPC</button>
+      </div>
+    </label>
+    <label>Qty <input id="p_qty" type="number" required></label>
+    <label>Min <input id="p_min" type="number" required></label>
+    <label>Max <input id="p_max" type="number" required></label>
+    <label>Bin <input id="p_bin"></input></label>
+    <div style="margin-top:1rem;text-align:right;display:flex;gap:.5rem">
+      <button type="button" class="sec" onclick="prodDlg.close()">Close</button>
+      <button class="pri">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!----- FILE IMPORT INPUT (hidden) ----->
+<input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none">
+
+<script type="module">
+/*────────────────────────────────────
+  DOM references
+────────────────────────────────────*/
+const scanDlg   = document.getElementById('scanDlg');
+const scanCancel= document.getElementById('scanCancel');
+const cam       = document.getElementById('cam');
+const fab       = document.getElementById('fab');
+const impBtn    = document.getElementById('impBtn');
+const tmplBtn   = document.getElementById('tmplBtn');
+const importFile= document.getElementById('importFile');
+const loginForm = document.getElementById('loginForm');
+const l_user    = document.getElementById('l_user');
+const l_pass    = document.getElementById('l_pass');
+const whList    = document.getElementById('whList');
+const addWh     = document.getElementById('addWh');
+const p_internal= document.getElementById('p_internal');
+const p_custom  = document.getElementById('p_custom');
+const p_upc     = document.getElementById('p_upc');
+const p_qty     = document.getElementById('p_qty');
+const p_min     = document.getElementById('p_min');
+const p_max     = document.getElementById('p_max');
+const p_bin     = document.getElementById('p_bin');
+const hdr       = document.getElementById('hdr');
+const prodDlg   = document.getElementById('prodDlg');
+const prodForm  = document.getElementById('prodForm');
+const backWh    = document.getElementById('backWh');
+const items     = document.getElementById('items');
+const count     = document.getElementById('count');
+
+/*────────────────────────────────────
+  External libs
+────────────────────────────────────*/
+import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
+import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library@0.20.0';
+
+/*────────────────────────────────────
+  Global helpers
+────────────────────────────────────*/
+let user=null, whId=null, whName=null;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
+
+/*────────────────────────────────────
+  IndexedDB
+────────────────────────────────────*/
+const db = await openDB('inventory', 3, {
+  upgrade(db, oldVersion) {
+    if (!db.objectStoreNames.contains('users'))
+      db.createObjectStore('users', { keyPath: 'name' });
+
+    if (!db.objectStoreNames.contains('warehouses'))
+      db.createObjectStore('warehouses', { keyPath: 'id', autoIncrement: true });
+
+    if (!db.objectStoreNames.contains('items'))
+      db.createObjectStore('items', { keyPath: 'key' });
+  }
+});
+await navigator.storage?.persist?.();
+
+/* seed users */
+for(const u of ['US1','US2']) if(!(await db.get('users',u))) db.put('users',{name:u,pass:u});
+
+/*────────────────────────────────────
+  Login flow
+────────────────────────────────────*/
+loginForm.onsubmit=async e=>{
+  e.preventDefault();
+  const rec=await db.get('users',l_user.value.trim());
+  if(rec?.pass===l_pass.value.trim()){
+    user=rec.name; await loadWarehouses(); show('wh');
+  }else alert('Invalid credentials');
+};
+
+/*────────────────────────────────────
+  Warehouses
+────────────────────────────────────*/
+async function loadWarehouses(){
+  const all=await db.getAll('warehouses');
+  const mine=all.filter(w=>w.user===user);
+  whList.innerHTML=mine.map(w=>`
+    <li><span>${w.name}</span>
+        <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button></li>`
+  ).join('')||'<li style="justify-content:center;color:#666">No warehouses yet</li>';
+}
+window.openWh=(id,name)=>{whId=id;whName=name;render();show('main');};
+
+addWh.onclick=async()=>{
+  const n=prompt('Warehouse name?'); if(!n) return;
+  const id=await db.add('warehouses',{name:n,user});
+  openWh(id,n);
+};
+
+/*────────────────────────────────────
+  Item helpers
+────────────────────────────────────*/
+const key=partId=>`${whId}|${partId}`;
+const allItems=()=>db.getAll('items').then(a=>a.filter(i=>i.whId===whId).sort((a,b)=>a.internal.localeCompare(b.internal)));
+const saveItem=o=>{o.key=key(o.internal);o.whId=whId;return db.put('items',o);};
+const byUPC=u=>db.getAll('items').then(a=>a.find(i=>i.whId===whId&&i.upc===u));
+
+/*────────────────────────────────────
+  Main view  (now shows Min / Max / Bin)
+────────────────────────────────────*/
+async function render(){
+  const list=await allItems();
+  items.innerHTML=list.map(i=>`
+    <li onclick="edit('${i.internal.replace(/'/g,'&#39;')}')">
+      <div style="flex:1">
+        <span>${i.internal}${i.custom?` / ${i.custom}`:''}</span>
+        <span class="meta">Min&nbsp;${i.min}&nbsp;·&nbsp;Max&nbsp;${i.max}&nbsp;·&nbsp;Bin&nbsp;${i.bin||'—'}</span>
+      </div>
+      <b>${i.qty}</b>
+    </li>`).join('');
+  count.textContent=`${whName} · ${list.length} items`;
+}
+window.edit=async internal=>{const it=await db.get('items',key(internal));it&&openManager(it);} ;
+
+/*────────────────────────────────────
+  Product manager dialog
+────────────────────────────────────*/
+let current=null, reader, stream, scanMode='lookup';
+function openManager(it){
+  current=it;
+  hdr.textContent=it.internal;
+  p_internal.value=it.internal; p_custom.value=it.custom||''; p_upc.value=it.upc||'';
+  p_qty.value=it.qty; p_min.value=it.min; p_max.value=it.max; p_bin.value=it.bin||'';
+  prodDlg.showModal();
+}
+prodForm.onsubmit=async e=>{
+  e.preventDefault();
+  current={internal:p_internal.value.trim(),custom:p_custom.value.trim(),upc:p_upc.value.trim(),
+           qty:+p_qty.value||0,min:+p_min.value||0,max:+p_max.value||0,bin:p_bin.value.trim()};
+  await saveItem(current); prodDlg.close(); render();
+};
+function scanIntoUPC(){startScan('upc');}
+
+/*────────────────────────────────────
+  Scanner (lookup / UPC capture) – ZXing only
+────────────────────────────────────*/
+fab.onclick=()=>startScan('lookup');
+scanCancel.onclick=stopScan;
+
+async function startScan(mode){
+  scanMode=mode;
+  scanDlg.showModal();
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    cam.srcObject = stream;
+    await cam.play();
+
+    reader = new BrowserMultiFormatReader();
+
+    // Start decoding frames continuously
+    reader.decodeFromVideoElement(cam, (result, err) => {
+      if(result){ onCode(result.getText()); }
+    });
+  }catch(err){
+    alert(err.message || err);
+    stopScan();
+  }
+}
+
+function stopScan(){
+  reader?.reset?.();
+  stream?.getTracks().forEach(t=>t.stop());
+  scanDlg.close();
+}
+
+async function onCode(code){
+  stopScan();
+  if(scanMode==='lookup'){
+    const it=await byUPC(code)||await db.get('items',key(code));
+    it?openManager(it):alert(`${code} not found`);
+  }else p_upc.value=code;
+}
+
+/*────────────────────────────────────
+  Import CSV/XLSX
+────────────────────────────────────*/
+impBtn.onclick=()=>importFile.click();
+importFile.onchange=async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  let rows=[];
+  if(ext==='csv'){
+    const txt=await file.text();
+    const Papa = (await import('https://cdn.jsdelivr.net/npm/papaparse@5/+esm')).default;
+    rows = Papa.parse(txt,{ header:true }).data;
+  }else{
+    const buf=await file.arrayBuffer();
+    const XLSX=await import('https://cdn.jsdelivr.net/npm/xlsx@0.20.3/+esm');
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    rows=XLSX.utils.sheet_to_json(ws);
+  }
+
+  for(const r of rows){
+    const internal=String(r['Internal Part']||r.internal||r.Internal||'').trim();
+    if(!internal) continue;
+    const exists=await db.get('items',key(internal));
+    if(exists&&!confirm(`${internal} exists. Overwrite?`)) continue;
+    await saveItem({
+      internal,
+      custom:String(r['Custom Part']||r.custom||r.Custom||'').trim(),
+      upc:String(r.UPC||r.upc||'').trim(),
+      qty:exists?exists.qty:0,
+      min:+(r.Min||r.min||0),
+      max:+(r.Max||r.max||0),
+      bin:String(r.Bin||r.bin||'').trim()
+    });
+  }
+  render(); importFile.value='';
+};
+
+/*────────────────────────────────────
+  Import-template generator
+────────────────────────────────────*/
+tmplBtn.onclick=()=>{
+  const cols=['Internal Part','Custom Part','UPC','Min','Max','Bin'];
+  const csv=cols.join(',')+'\n';
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='import_template.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+/*────────────────────────────────────
+  Navigation
+────────────────────────────────────*/
+backWh.onclick=()=>{show('wh');loadWarehouses();};
+
+/*────────────────────────────────────
+  Service-worker
+────────────────────────────────────*/
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
