@@ -277,8 +277,12 @@ const massUPCBtn=$('massUPCBtn'), scanInfo=$('scanInfo');
 /*────────────────────────────────────
   EXTERNAL LIBS
 ────────────────────────────────────*/
-import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
-import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library@0.20.0';
+import {openDB} from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
+import {
+  BrowserMultiFormatReader,
+  DecodeHintType,
+  BarcodeFormat
+} from 'https://cdn.skypack.dev/@zxing/library@0.20.0';
 
 /*────────────────────────────────────
   CONSTANTS
@@ -651,46 +655,94 @@ massUPCBtn.onclick = startMassUPC;
 /*────────────────────────────────────
   BARCODE SCANNER (ZXing)
 ────────────────────────────────────*/
-let reader, stream, captureInto=null;
-fab.onclick     = ()=>startScan(null);
-btnUPC.onclick  = ()=>{ captureInto=p_upc; prodDlg.close(); startScan(); };
-scanCancel.onclick = ()=>{ massMode=false; stopScan(); };
+const NATIVE_FORMATS = [
+  'code_128','code_39','ean_13','ean_8','upc_a','upc_e','qr_code'
+];
+
+const ZXING_HINTS = (() => {
+  const hints = new Map();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.UPC_A,  BarcodeFormat.UPC_E,
+    BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
+    BarcodeFormat.CODE_128, BarcodeFormat.CODE_39
+  ]);
+  hints.set(DecodeHintType.TRY_HARDER, true);
+  return hints;
+})();
+
+const SCAN_CONSTRAINTS = {
+  video: {
+    facingMode: {ideal: 'environment'},
+    width : {min: 640, ideal: 1280, max: 1920},
+    height: {min: 480, ideal: 720,  max: 1080}
+  }
+};
+
+let reader, stream, captureInto = null;
+
+/* launchers stay the same */
+fab.onclick    = () => startScan();
+btnUPC.onclick = () => { captureInto = p_upc; prodDlg.close(); startScan(); };
+scanCancel.onclick = () => { massMode = false; stopScan(); };
 
 async function startScan(){
   scanDlg.showModal();
   try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
-    cam.srcObject = stream; await cam.play();
-    reader = new BrowserMultiFormatReader(undefined,45);
-    reader.decodeFromVideoElement(cam,(res)=> res && onCode(res.getText()));
+    stream = await navigator.mediaDevices.getUserMedia(SCAN_CONSTRAINTS);
+    cam.srcObject = stream;
+    await cam.play();
+
+    /* try to force continuous autofocus when available */
+    try{
+      const track = stream.getVideoTracks()[0];
+      const caps  = track.getCapabilities?.() || {};
+      if(caps.focusMode?.includes('continuous')){
+        await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      }
+    }catch{ /* capability not supported – ignore */ }
+
+    'BarcodeDetector' in window ? startNativeDetector() : startZXingDetector();
   }catch(err){
-    alert(err.message||err); stopScan(); logError('scan',err);
-  }
-}
-function stopScan(){
-  reader?.reset?.(); stream?.getTracks().forEach(t=>t.stop()); scanDlg.close();
-}
-async function onCode(code){
-  if(massMode){
+    alert(err.message || err);
     stopScan();
-    const item = massList[massIndex];
-    const it = await db.get('items', key(item.internal));
-    if(it){ it.upc = code; await saveItem(it); }
-    massIndex++;
-    if(massIndex < massList.length){ showNextMassItem(); startScan(); }
-    else{ massMode=false; alert('Mass UPC scanning complete'); render(); }
-    return;
+    logError('scan', err);
   }
-  stopScan();
-  if(captureInto){
-    captureInto.value=code; captureInto=null;
-    if(current && current.internal){ current.upc = code; await saveItem(current); render(); }
-    prodDlg.showModal(); return;
-  }
-  const it=await byUPC(code) || await db.get('items',key(code));
-  it ? openManager(it) : alert(`${code} not found`);
 }
 
+/* -------- Native Barcode Detection API -------- */
+function startNativeDetector(){
+  const detector = new BarcodeDetector({formats: NATIVE_FORMATS});
+  const imageCapture = new ImageCapture(stream.getVideoTracks()[0]);
+
+  const tick = async () => {
+    if(!scanDlg.open) return;            // dialog closed
+    try{
+      const bitmap   = await imageCapture.grabFrame();
+      const barcodes = await detector.detect(bitmap);
+      if(barcodes.length){
+        onCode(barcodes[0].rawValue);
+        return;
+      }
+    }catch{/* frame failed – keep looping */}
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+/* -------- ZXing fallback -------- */
+function startZXingDetector(){
+  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200); // 200 ms between scans
+  reader.decodeFromConstraints(SCAN_CONSTRAINTS, cam, (res, err) => {
+    if(res) onCode(res.getText());
+  });
+}
+
+/* -------- shared helpers -------- */
+function stopScan(){
+  reader?.reset?.();
+  stream?.getTracks().forEach(t=>t.stop());
+  scanDlg.close();
+}
 /*────────────────────────────────────
   IMPORT CSV / XLSX
 ────────────────────────────────────*/
