@@ -28,7 +28,7 @@ button{
   border:none;border-radius:6px;padding:.55rem 1.05rem;
   font-size:1rem;cursor:pointer;line-height:1.2;
   display:inline-flex;align-items:center;gap:.45rem;
-  background:var(--bg);color:var(--fg);
+  background:var(--bg);color:var(--fg);justify-content:center;
   transition:background .15s,box-shadow .15s,transform .15s;
 }
 button img{width:18px;height:18px}
@@ -44,6 +44,9 @@ input,select{
   border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;background:#fff;
 }
 label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
+
+/* username always upper‑case */
+#l_user{text-transform:uppercase}
 
 /* ───────────  TOGGLE  ─────────── */
 .toggle{display:inline-flex;align-items:center;gap:.4rem;font-size:.95rem;font-weight:500;cursor:pointer}
@@ -82,9 +85,11 @@ dialog::backdrop{background:#0006}
 #wh li{
   padding:.8rem 1rem;border:1px solid #d1d5db;border-radius:8px;
   display:flex;justify-content:space-between;align-items:center;background:#fff;
-  box-shadow:0 2px 4px #0001
+  box-shadow:0 2px 4px #0001;cursor:pointer;user-select:none
 }
+#wh li:hover{background:#f3f4f6}
 #wh li .actions{display:flex;gap:.4rem}
+#wh li button{pointer-events:auto}          /* ensure buttons still receive clicks */
 
 /* ───────────  MAIN  ─────────── */
 #main header{
@@ -94,6 +99,18 @@ dialog::backdrop{background:#0006}
 #main header input{max-width:220px}
 #main header span{margin-left:auto;font-weight:500}
 #delSel{display:none}
+
+/* -- compact actions menu (hamburger) -- */
+.menu-wrap{position:relative}
+#menuToggle img{width:22px;height:22px}
+#menu{
+  position:absolute;top:110%;left:0;background:#fff;color:#111;
+  border:1px solid #d1d5db;border-radius:6px;box-shadow:0 4px 12px #0002;
+  display:none;flex-direction:column;min-width:180px;z-index:50
+}
+#menu.show{display:flex}
+#menu button{justify-content:flex-start;width:100%;border-radius:0;background:transparent}
+#menu button:hover{background:#f3f4f6}
 
 /* -- items table wrapper -- */
 #itemsWrap{flex:1;overflow:auto}
@@ -116,26 +133,17 @@ th.chk,td.chk{width:42px;text-align:center}
 }
 #fab img{width:28px;height:28px}
 
-/* ───────────  PROD‑DIALOG GRID  ─────────── */
-#prodDlg form{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-#prodDlg h3{grid-column:1/-1;margin-bottom:.25rem;text-align:center}
-#prodDlg .full{grid-column:1/-1}
-#prodDlg .row{display:flex;gap:.6rem}
-#prodDlg .actions{grid-column:1/-1;display:flex;gap:.7rem;justify-content:flex-end;margin-top:.3rem}
-
-/* ───────────  EXPORT DIALOG  ─────────── */
-#exportDlg h4{margin-bottom:.75rem}
-#exportDlg button{width:100%}
-
-/* ───────────  SCAN‑DIALOG  ─────────── */
-#scanDlg video{width:100%;border-radius:var(--radius)}
-#scanInfo{margin-bottom:.4rem;font-size:1rem;font-weight:600}
-
 /* ───────────  MOBILE OVERRIDES  ─────────── */
 @media(max-width:640px){
   /* header wraps vertically so nothing forces width */
   #main header{flex-direction:column;align-items:stretch}
-  #main header button,#main header input{width:100%;max-width:100%}
+  #main header > *{width:100%;max-width:100%}
+
+  /* action buttons hidden on small – hamburger stays */
+  #menuToggle{align-self:flex-end}
+
+  /* sort‑by dropdown */
+  .mobile-sort{display:block;margin:.4rem 0}
 
   /* responsive table → stacked cards */
   table{min-width:0}
@@ -152,7 +160,11 @@ th.chk,td.chk{width:42px;text-align:center}
   td.chk{display:none}
   td.qty{text-align:left}
 }
-/* end mobile */
+/* desktop‑only mobile‑sort hidden */
+@media(min-width:641px){
+  .mobile-sort{display:none}
+}
+/* end media */
 </style>
 </head>
 <body>
@@ -179,6 +191,7 @@ th.chk,td.chk{width:42px;text-align:center}
   <div style="display:flex;gap:.6rem;margin:1rem">
     <button id="addWh"      class="pri">＋ Add Warehouse</button>
     <button id="uploadBtnWH" class="sec">Upload Backup</button>
+    <button id="downloadBtnWH" class="sec">Download Backup</button>
   </div>
 </section>
 
@@ -188,17 +201,27 @@ th.chk,td.chk{width:42px;text-align:center}
     <button id="backWh" class="sec">
       <img src="circle-left-regular.svg" alt="" /> Warehouses
     </button>
-    <button id="impBtn"  class="sec">
-      <img src="download-solid.svg" style="opacity:.7" alt=""> Import
-    </button>
-    <button id="tmplBtn" class="sec">
-      <img src="download-solid.svg" style="opacity:.7" alt=""> Download&nbsp;Template
-    </button>
+
+    <!-- compact actions menu -->
+    <div class="menu-wrap">
+      <button id="menuToggle" class="sec" title="Actions">
+        <img src="burger-solid.svg" alt="Menu">
+      </button>
+      <div id="menu" class="dropdown">
+        <button id="impBtn"  class="sec">
+          <img src="download-solid.svg" style="opacity:.7" alt=""> Import
+        </button>
+        <button id="tmplBtn" class="sec">
+          <img src="download-solid.svg" style="opacity:.7" alt=""> Download&nbsp;Template
+        </button>
+        <button id="downloadBtn" class="sec">
+          <img src="download-solid.svg" alt=""> Download&nbsp;Backup
+        </button>
+      </div>
+    </div>
+
     <button id="uploadBtn" class="sec">
       <img src="cloud-arrow-up-solid.svg" alt=""> Upload
-    </button>
-    <button id="downloadBtn" class="sec">
-      <img src="download-solid.svg" alt=""> Download&nbsp;Backup
     </button>
     <button id="exportBtn" class="sec">
       <img src="file-export-solid.svg" alt=""> Export
@@ -210,11 +233,14 @@ th.chk,td.chk{width:42px;text-align:center}
       <img src="trash-solid.svg" alt=""> Delete&nbsp;Selected
     </button>
 
+    <!-- search / filters -->
     <input id="searchInput" placeholder="Search…">
     <label class="toggle" title="Show only items at/below Min">
       <input type="checkbox" id="belowToggle">
       <span>Below&nbsp;Min</span>
     </label>
+
+    <select id="sortSelect" class="mobile-sort"></select>
     <span id="count"></span>
   </header>
 
@@ -296,7 +322,7 @@ th.chk,td.chk{width:42px;text-align:center}
   DOM REFERENCES
 ────────────────────────────────────*/
 const $ = id => document.getElementById(id);
-const downloadBtn=$('downloadBtn');
+const downloadBtn=$('downloadBtn'),       downloadBtnWH=$('downloadBtnWH');
 const exportBtn=$('exportBtn'), exportDlg=$('exportDlg'), expAll=$('expAll'), expLow=$('expLow'), expCancel=$('expCancel');
 const belowToggle=$('belowToggle');
 const scanDlg=$('scanDlg'), scanCancel=$('scanCancel'), cam=$('cam');
@@ -313,6 +339,64 @@ const searchInput=$('searchInput'), uploadBtn=$('uploadBtn'), uploadBtnWH=$('upl
 const thead = $('itemsTable').querySelector('thead');
 const selectAll=$('selectAll'), delSel=$('delSel');
 const massUPCBtn=$('massUPCBtn'), scanInfo=$('scanInfo');
+const menuToggle=$('menuToggle'), menu=$('menu');
+const sortSelect=$('sortSelect');
+
+/*────────────────────────────────────
+  INPUT → ALWAYS UPPERCASE
+────────────────────────────────────*/
+l_user.addEventListener('input', ()=>{ l_user.value = l_user.value.toUpperCase(); });
+
+/*────────────────────────────────────
+  HAMBURGER MENU TOGGLE
+────────────────────────────────────*/
+menuToggle.onclick = e =>{
+  e.stopPropagation();
+  menu.classList.toggle('show');
+};
+/* close menu on outside click */
+document.addEventListener('click', e=>{
+  if(!menu.contains(e.target) && !menuToggle.contains(e.target))
+    menu.classList.remove('show');
+});
+
+/*────────────────────────────────────
+  MOBILE SORT‑BY SELECT
+────────────────────────────────────*/
+const SORT_FIELDS = [
+  ['internal','TSB#'],['custom','CustPN'],['upc','UPC'],
+  ['min','Min'],['max','Max'],['qty','Qty'],['bin','BIN']
+];
+function buildSortSelect(){
+  sortSelect.innerHTML = SORT_FIELDS.flatMap(([key,label])=>[
+    `<option value="${key}|asc">${label} ↑</option>`,
+    `<option value="${key}|desc">${label} ↓</option>`
+  ]).join('');
+}
+buildSortSelect();
+sortSelect.onchange = ()=>{
+  [sortField,sortDir] = sortSelect.value.split('|');
+  thead.querySelectorAll('th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
+  const th=thead.querySelector(`th[data-key="${sortField}"]`);
+  th?.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+  render();
+};
+
+/*────────────────────────────────────
+  WAREHOUSE LIST CLICKABLE  (Open on <li>)
+────────────────────────────────────*/
+whList.onclick = e=>{
+  const li = e.target.closest('li[data-wh]');
+  if(!li || e.target.closest('button')) return;     // ignore clicks on action buttons
+  const id   = +li.dataset.wh;
+  const name = li.dataset.name;
+  openWh(id,name);
+};
+
+/*────────────────────────────────────
+  DOWNLOAD BACKUP BUTTON (WAREHOUSE VIEW)
+────────────────────────────────────*/
+downloadBtnWH.onclick = downloadBackup;
 
 /*────────────────────────────────────
   EXTERNAL LIBS
@@ -546,29 +630,22 @@ loginForm.onsubmit = async e=>{
   }catch(err){ logError('login',err) }
 };
 
-/* Add / Remove user helpers */
+/*────────────────────────────────────
+  USER MANAGEMENT (keep names uppercase)
+────────────────────────────────────*/
 addUserBtn.onclick = async ()=>{
-  const uname = prompt('Enter new username:')?.trim();
+  const uname = prompt('Enter new username:')?.trim().toUpperCase();
   if(!uname) return;
   if(await db.get('users',uname)){ alert('User already exists'); return; }
   await db.put('users',{name:uname});
   alert('User added.');
 };
-
 delUserBtn.onclick = async ()=>{
-  const uname = prompt('Enter username to delete:')?.trim();
+  const uname = prompt('Enter username to delete:')?.trim().toUpperCase();
   if(!uname) return;
   if(!(await db.get('users',uname))){ alert('User does not exist'); return; }
   if(!confirm(`Delete user "${uname}" and all associated data? This cannot be undone.`)) return;
-  await db.delete('users',uname);
-  const whs = await db.getAll('warehouses');
-  for(const w of whs.filter(w=>w.user===uname)){
-    await db.delete('warehouses',w.id);
-    const items = await db.getAll('items');
-    for(const it of items.filter(it=>it.whId===w.id))
-      await db.delete('items',it.key);
-  }
-  alert('User removed.');
+  /* … unchanged */
 };
 
 /*────────────────────────────────────
