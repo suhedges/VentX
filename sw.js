@@ -1,5 +1,5 @@
 // sw.js – replace old file completely
-const CACHE = 'inv-v17';   // bump when anything changes!
+const CACHE = 'inv-v19';   // bump when anything changes!
 
 const CORE = [
   './',

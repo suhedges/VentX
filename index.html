@@ -1,4 +1,3 @@
-<!--  index.html  –  replace the old file completely  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,143 +9,223 @@
 <link rel="icon" href="favicon.ico">
 
 <style>
-  /* ───────────  THEME  ─────────── */
-  :root{
-    --blue:#2563eb;
-    --gray:#1f2937;
-    --radius:8px;
-    font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body,html{height:100%}
-  body{display:flex;flex-direction:column;background:#f8fafc;color:#111}
+/* ───────────  THEME  ─────────── */
+:root{
+  --blue:#2563eb;
+  --blue-hover:#1e4fc0;
+  --gray:#1f2937;
+  --light:#f8fafc;
+  --radius:8px;
+  font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body,html{height:100%}
+body{display:flex;flex-direction:column;background:var(--light);color:#111}
 
-  /* ───────────  SHARED  ─────────── */
-  button{
-    border:none;border-radius:6px;padding:.5rem 1rem;
-    font-size:1rem;cursor:pointer;line-height:1.2
-  }
-  .sec{background:#e5e7eb}
-  .pri{background:var(--blue);color:#fff}
-  input,select{
-    width:100%;padding:.45rem;border:1px solid #cbd5e1;border-radius:4px;font-size:1rem
-  }
-  label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
+/* ───────────  SHARED  ─────────── */
+button{
+  --bg:#e5e7eb;
+  --fg:#111;
+  border:none;
+  border-radius:6px;
+  padding:.55rem 1.05rem;
+  font-size:1rem;
+  cursor:pointer;
+  line-height:1.2;
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  background:var(--bg);
+  color:var(--fg);
+  transition:background .15s,box-shadow .15s,transform .15s;
+}
+button img{width:18px;height:18px}
+button:active{transform:translateY(1px)}
+button:hover{box-shadow:0 2px 6px #0002}
+.pri{--bg:var(--blue);--fg:#fff}
+.pri:hover{background:var(--blue-hover)}
+.sec:hover{background:#d1d5db}
 
-  /* ───────────  DIALOGS  ─────────── */
-  dialog{
-    border:none;border-radius:var(--radius);padding:1rem;width:92%;max-width:480px;
-    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-    background:#fff
-  }
-  dialog::backdrop{background:#0007}
+/* modernize inputs & selects */
+input,select{
+  width:100%;
+  padding:.5rem .75rem;
+  border:1px solid #cbd5e1;
+  border-radius:6px;
+  font-size:1rem;
+  background:#fff;
+}
+label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
 
-  /* ───────────  SCREENS  ─────────── */
-  .screen{flex:1;display:none;flex-direction:column}
-  .show{display:flex}
+/* ───────────  DIALOGS  ─────────── */
+dialog{
+  border:none;border-radius:var(--radius);padding:1rem;width:92%;max-width:480px;
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#fff;box-shadow:0 6px 24px #0003
+}
+dialog::backdrop{background:#0006}
 
-  /* ───────────  LOGIN  ─────────── */
-  #login form{
-    margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
-    padding:2rem;border-radius:var(--radius);background:#fff
-  }
-  #login h2{margin-bottom:1rem;text-align:center}
-  #installBtn{margin-top:.6rem;width:100%;display:none}
+/* ───────────  SCREENS  ─────────── */
+.screen{flex:1;display:none;flex-direction:column}
+.show{display:flex}
 
-  /* ───────────  WAREHOUSES  ─────────── */
-  #wh header{background:var(--gray);color:#fff;padding:.8rem 1rem;font-size:1.25rem}
-  #wh ul{list-style:none;padding:1rem;gap:.6rem;display:flex;flex-direction:column}
-  #wh li{
-    padding:.7rem .9rem;border:1px solid #d1d5db;border-radius:6px;
-    display:flex;justify-content:space-between;align-items:center;background:#fff
-  }
+/* ───────────  LOGIN  ─────────── */
+#login form{
+  margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
+  padding:2rem;border-radius:var(--radius);background:#fff;box-shadow:0 4px 18px #0001
+}
+#login h2{margin-bottom:1rem;text-align:center}
+#installBtn{margin-top:.6rem;width:100%}
 
-  /* ───────────  MAIN  ─────────── */
-  #main header{
-    display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;
-    background:var(--gray);color:#fff;padding:.7rem .9rem
-  }
-  #main header input{max-width:220px}
-  #main header select{width:auto}
-  #main header span{margin-left:auto}
-  #items{flex:1;overflow:auto;padding:1rem;list-style:none}
-  #items li{
-    margin:.25rem 0;padding:.4rem .6rem;border:1px solid #d1d5db;
-    border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;
-    background:#fff;gap:.75rem
-  }
-  #items li:hover{cursor:pointer;background:#eceded}
-  #items .meta{font-size:.8rem;color:#555;margin-top:.15rem}
-  #fab{
-    position:fixed;right:1rem;bottom:1rem;width:56px;height:56px;
-    background:var(--blue);color:#fff;border:none;border-radius:50%;
-    font-size:28px;box-shadow:0 4px 12px #0004
-  }
+/* ───────────  WAREHOUSES  ─────────── */
+#wh header{background:var(--gray);color:#fff;padding:.9rem 1.2rem;font-size:1.3rem}
+#wh ul{list-style:none;padding:1rem;gap:.7rem;display:flex;flex-direction:column}
+#wh li{
+  padding:.8rem 1rem;border:1px solid #d1d5db;border-radius:8px;
+  display:flex;justify-content:space-between;align-items:center;background:#fff;
+  box-shadow:0 2px 4px #0001
+}
+#wh li .actions{display:flex;gap:.4rem}
 
-  /* ───────────  PROD-DIALOG GRID  ─────────── */
-  #prodDlg form{
-    display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))
-  }
-  #prodDlg h3{grid-column:1/-1;margin-bottom:.25rem;text-align:center}
-  #prodDlg .full{grid-column:1/-1}
-  #prodDlg .row{display:flex;gap:.5rem}
-  #prodDlg .actions{grid-column:1/-1;display:flex;gap:.6rem;justify-content:flex-end;margin-top:.25rem}
+/* ───────────  MAIN  ─────────── */
+#main header{
+  display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;
+  background:var(--gray);color:#fff;padding:.8rem 1rem
+}
+#main header input{max-width:220px}
+#main header span{margin-left:auto;font-weight:500}
+#delSel{display:none}
 
-  /* ───────────  SCAN-DIALOG  ─────────── */
-  #scanDlg video{width:100%;border-radius:var(--radius)}
+/* -- items table wrapper -- */
+#itemsWrap{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:.55rem .8rem;border-bottom:1px solid #d1d5db;text-align:left;white-space:nowrap}
+tbody tr:hover{background:#eef0f2;cursor:pointer}
+th{background:#f1f5f9;position:sticky;top:0;z-index:1;cursor:pointer;user-select:none}
+th.sort-asc::after{content:" ▲";font-size:.75rem}
+th.sort-desc::after{content:" ▼";font-size:.75rem}
+td.qty{text-align:right;font-weight:600}
+td.qty[contenteditable]:focus{outline:2px solid var(--blue)}
+th.chk,td.chk{width:42px;text-align:center}
+.row-del{cursor:pointer}
+
+/* ───────────  FAB  ─────────── */
+#fab{
+  position:fixed;right:1.2rem;bottom:1.2rem;width:60px;height:60px;
+  background:var(--blue);color:#fff;border:none;border-radius:50%;
+  box-shadow:0 4px 12px #0003;display:flex;justify-content:center;align-items:center
+}
+#fab img{width:28px;height:28px}
+
+/* ───────────  PROD-DIALOG GRID  ─────────── */
+#prodDlg form{
+  display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))
+}
+#prodDlg h3{grid-column:1/-1;margin-bottom:.25rem;text-align:center}
+#prodDlg .full{grid-column:1/-1}
+#prodDlg .row{display:flex;gap:.6rem}
+#prodDlg .actions{grid-column:1/-1;display:flex;gap:.7rem;justify-content:flex-end;margin-top:.3rem}
+
+/* ───────────  SCAN-DIALOG  ─────────── */
+#scanDlg video{width:100%;border-radius:var(--radius)}
+#scanInfo{margin-bottom:.4rem;font-size:1rem;font-weight:600}
 </style>
 </head>
 <body>
 
-<!----- LOGIN ----->
+<!----- LOGIN ----->               <!-- ① INSTALL BUTTON VISIBLE -->
 <section id="login" class="screen show">
   <form id="loginForm">
     <h2>Login</h2>
     <label>Username <input id="l_user" required></label>
-    <label>Password <input id="l_pass" type="password" required></label>
-    <button class="pri" style="margin-top:1.5rem;width:100%">Sign in</button>
-    <button id="installBtn" class="sec">Install App</button>
+
+    <button class="pri" style="margin-top:1.6rem;width:100%">Sign in</button>
+
+    <div style="display:flex;gap:.5rem;margin-top:.6rem">
+      <button id="addUserBtn" class="sec" style="flex:1">Add&nbsp;User</button>
+      <button id="delUserBtn" class="sec" style="flex:1">Remove&nbsp;User</button>
+    </div>
+
+    <button id="installBtn" class="sec" disabled>Install&nbsp;App</button>
   </form>
 </section>
 
-<!----- WAREHOUSES ----->
+<!----- WAREHOUSES ----->                                      
 <section id="wh" class="screen">
   <header>Warehouses</header>
   <ul id="whList"></ul>
-  <button id="addWh" class="pri" style="margin:1rem">＋ Add Warehouse</button>
+  <div style="display:flex;gap:.6rem;margin:1rem">
+    <button id="addWh" class="pri">＋ Add Warehouse</button>
+    <button id="uploadBtnWH" class="sec">Upload Backup</button>
+  </div>
 </section>
 
-<!----- MAIN ----->
+<!----- MAIN ----->                                             
 <section id="main" class="screen">
   <header>
-    <button id="backWh" class="sec">Warehouses</button>
-    <button id="impBtn"  class="sec">Import</button>
-    <button id="tmplBtn" class="sec">Download&nbsp;Template</button>
-    <button id="uploadBtn" class="sec">Upload</button>
-    <button id="downloadBtn" class="sec">Download&nbsp;Backup</button>
+    <button id="backWh" class="sec">
+      <img src="circle-left-regular.svg" alt="" /> Warehouses
+    </button>
+    <button id="impBtn"  class="sec">
+      <img src="download-solid.svg" alt="" style="opacity:.7" /> Import
+    </button>
+    <button id="tmplBtn" class="sec">
+      <img src="download-solid.svg" alt="" style="opacity:.7" /> Download&nbsp;Template
+    </button>
+    <button id="uploadBtn" class="sec">
+      <img src="cloud-arrow-up-solid.svg" alt="" /> Upload
+    </button>
+    <button id="downloadBtn" class="sec">
+      <img src="download-solid.svg" alt="" /> Download&nbsp;Backup
+    </button>
+    <!-- NEW MASS UPC BUTTON -->
+    <button id="massUPCBtn" class="sec">
+      <img src="barcode-solid.svg" alt="" /> Mass&nbsp;UPC
+    </button>
+
+    <!-- DELETE-SELECTED BUTTON (appears when rows are ticked) -->
+    <button id="delSel" class="sec">
+      <img src="trash-solid.svg" alt="" /> Delete&nbsp;Selected
+    </button>
 
     <input id="searchInput" placeholder="Search…">
-    <select id="sortSelect" class="sec" title="Sort" placeholder:"Sort">
-      <option value="internal">Part # ↑</option>
-      <option value="internal-desc">Part # ↓</option>
-      <option value="bin">Bin ↑</option>
-      <option value="bin-desc">Bin ↓</option>
-    </select>
     <span id="count"></span>
   </header>
 
-  <ul id="items"></ul>
-  <button id="fab" title="Scan product">📷</button>
+  <!-- ② SPREADSHEET-STYLE TABLE -->
+  <div id="itemsWrap">
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th class="chk"><input type="checkbox" id="selectAll"></th>
+          <th data-key="internal">TSB#</th>
+          <th data-key="custom">CustPN</th>
+          <th data-key="upc">UPC</th>
+          <th data-key="min">Min</th>
+          <th data-key="max">Max</th>
+          <th data-key="qty">Qty</th>
+          <th data-key="bin">BIN</th>
+          <th class="chk"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+  </div>
+
+  <button id="fab" title="Scan product">
+    <img src="camera-solid.svg" alt="Scan">
+  </button>
 </section>
 
-<!----- SCAN DIALOG ----->
+<!----- SCAN DIALOG ----->                                       
 <dialog id="scanDlg">
+  <h4 id="scanInfo" style="text-align:center"></h4>
   <video id="cam" playsinline></video>
   <p align="center">Point camera at barcode…</p>
   <button class="sec" id="scanCancel" style="width:100%">Cancel</button>
 </dialog>
 
-<!----- PRODUCT MANAGER ----->
+<!----- PRODUCT MANAGER ----->                                   
 <dialog id="prodDlg">
   <form id="prodForm" novalidate>
     <h3 id="hdr">Add / Edit Item</h3>
@@ -157,7 +236,7 @@
     <label class="full">UPC
       <div class="row">
         <input id="p_upc">
-        <button type="button" class="sec" id="btnUPC">Scan UPC</button>
+        <button type="button" class="sec" id="btnUPC"><img src="camera-solid.svg" alt="" style="opacity:.7" /> Scan UPC</button>
       </div>
     </label>
 
@@ -173,12 +252,31 @@
   </form>
 </dialog>
 
-<!----- FILE IMPORT INPUT (hidden) ----->
+<!----- FILE IMPORT INPUT (hidden) ----->                        
 <input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none">
 
 <script type="module">
 
-const downloadBtn = $('downloadBtn');
+/*────────────────────────────────────
+  DOM REFERENCES
+────────────────────────────────────*/
+const $ = id => document.getElementById(id);
+const downloadBtn=$('downloadBtn');
+const scanDlg=$('scanDlg'), scanCancel=$('scanCancel'), cam=$('cam');
+const fab=$('fab'), impBtn=$('impBtn'), tmplBtn=$('tmplBtn'), importFile=$('importFile');
+const loginForm=$('loginForm'), l_user=$('l_user'), installBtn=$('installBtn');
+const addUserBtn=$('addUserBtn'), delUserBtn=$('delUserBtn');
+const whList=$('whList'), addWh=$('addWh');
+const p_internal=$('p_internal'), p_custom=$('p_custom'), p_upc=$('p_upc');
+const p_qty=$('p_qty'), p_min=$('p_min'), p_max=$('p_max'), p_bin=$('p_bin');
+const hdr=$('hdr'), prodDlg=$('prodDlg'), prodForm=$('prodForm');
+const closeProd=$('closeProd'), btnUPC=$('btnUPC');
+const backWh=$('backWh'), itemsBody=$('itemsBody'), count=$('count');
+const searchInput=$('searchInput'), uploadBtn=$('uploadBtn'), uploadBtnWH=$('uploadBtnWH');
+const thead = $('itemsTable').querySelector('thead');
+const selectAll=$('selectAll'), delSel=$('delSel');
+/* NEW REFERENCES */
+const massUPCBtn=$('massUPCBtn'), scanInfo=$('scanInfo');
 
 /*────────────────────────────────────
   EXTERNAL LIBS (lazy-loaded where possible)
@@ -191,26 +289,21 @@ import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library
 ────────────────────────────────────*/
 const APP_VERSION = '2025-07-15';
 
-/*────────────────────────────────────
-  DOM REFERENCES
-────────────────────────────────────*/
-const $ = id => document.getElementById(id);
-const scanDlg=$('scanDlg'), scanCancel=$('scanCancel'), cam=$('cam');
-const fab=$('fab'), impBtn=$('impBtn'), tmplBtn=$('tmplBtn'), importFile=$('importFile');
-const loginForm=$('loginForm'), l_user=$('l_user'), l_pass=$('l_pass'), installBtn=$('installBtn');
-const whList=$('whList'), addWh=$('addWh');
-const p_internal=$('p_internal'), p_custom=$('p_custom'), p_upc=$('p_upc');
-const p_qty=$('p_qty'), p_min=$('p_min'), p_max=$('p_max'), p_bin=$('p_bin');
-const hdr=$('hdr'), prodDlg=$('prodDlg'), prodForm=$('prodForm');
-const closeProd=$('closeProd'), btnUPC=$('btnUPC');
-const backWh=$('backWh'), items=$('items'), count=$('count');
-const searchInput=$('searchInput'), sortSelect=$('sortSelect'), uploadBtn=$('uploadBtn');
+const HARD_TOKEN = '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';  
+
 
 /*────────────────────────────────────
   STATE HELPERS
 ────────────────────────────────────*/
 let user=null, whId=null, whName=null, current=null, deferredPrompt=null;
+let sortField='internal', sortDir='asc';
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
+
+/* MASS UPC STATE */
+let massMode=false, massList=[], massIndex=0;
+
+/* SELECTION STATE */
+const selectedParts=new Set();
 
 /*────────────────────────────────────
   INDEXED-DB
@@ -231,7 +324,7 @@ await navigator.storage?.persist?.();          // ask for persistent quota
 
 /* seed demo users */
 for(const u of ['US1','US2'])
-  if(!(await db.get('users',u))) db.put('users',{name:u,pass:u});
+  if(!(await db.get('users',u))) db.put('users',{name:u});
 
 /* simple logger */
 async function logError(type,msg){
@@ -241,40 +334,77 @@ async function logError(type,msg){
 /*────────────────────────────────────
   INSTALL (PWA)
 ────────────────────────────────────*/
-window.addEventListener('beforeinstallprompt', e=>{
+installBtn.disabled = true;
+window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   deferredPrompt = e;
-  installBtn.style.display='block';
+  installBtn.disabled = false;
 });
-installBtn.onclick = async()=>{
-  try{
-    if(window.matchMedia('(display-mode: standalone)').matches){
-      const overwrite = confirm('VentX is already installed. Overwrite installation?');
-      if(!overwrite) return;
-      // clear existing caches so the new build installs fresh
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k=>caches.delete(k)));
-    }
-    if(deferredPrompt){
-      deferredPrompt.prompt();
-      const res = await deferredPrompt.userChoice;
-      if(res.outcome==='accepted') installBtn.style.display='none';
-      deferredPrompt=null;
-    }
-  }catch(err){logError('install',err)}
+
+installBtn.onclick = async () => {
+  if (!deferredPrompt) {
+    alert('If your browser supports it, use “Add to Home Screen” from the menu to install.');
+    return;
+  }
+  try {
+    deferredPrompt.prompt();
+    const res = await deferredPrompt.userChoice;
+    if (res.outcome === 'accepted') installBtn.disabled = true;
+    deferredPrompt = null;
+  } catch (err) { logError('install', err); }
 };
 
 /*────────────────────────────────────
-  LOGIN
+  LOGIN  (username only)
 ────────────────────────────────────*/
-loginForm.onsubmit=async e=>{
+loginForm.onsubmit = async e=>{
   e.preventDefault();
+  const name = l_user.value.trim();
+  if(!name){ alert('Username required'); return; }
   try{
-    const rec=await db.get('users',l_user.value.trim());
-    if(rec?.pass===l_pass.value.trim()){
-      user=rec.name; await loadWarehouses(); show('wh');
-    }else alert('Invalid credentials');
-  }catch(err){logError('login',err)}
+    const rec = await db.get('users', name);
+    if(rec){
+      user = name;
+      await loadWarehouses();
+      show('wh');
+    }else{
+      if(confirm('User not found. Create new user?')){
+        await db.put('users',{name});
+        user = name;
+        await loadWarehouses();
+        show('wh');
+      }else{
+        alert('Invalid user');
+      }
+    }
+  }catch(err){ logError('login',err) }
+};
+
+/* Add / Remove user helpers */
+addUserBtn.onclick = async ()=>{
+  const uname = prompt('Enter new username:')?.trim();
+  if(!uname) return;
+  if(await db.get('users',uname)){ alert('User already exists'); return; }
+  await db.put('users',{name:uname});
+  alert('User added.');
+};
+
+delUserBtn.onclick = async ()=>{
+  const uname = prompt('Enter username to delete:')?.trim();
+  if(!uname) return;
+  if(!(await db.get('users',uname))){ alert('User does not exist'); return; }
+  if(!confirm(`Delete user "${uname}" and all associated data? This cannot be undone.`)) return;
+  /* delete user record */
+  await db.delete('users',uname);
+  /* delete their warehouses & items */
+  const whs = await db.getAll('warehouses');
+  for(const w of whs.filter(w=>w.user===uname)){
+    await db.delete('warehouses',w.id);
+    const items = await db.getAll('items');
+    for(const it of items.filter(it=>it.whId===w.id))
+      await db.delete('items',it.key);
+  }
+  alert('User removed.');
 };
 
 /*────────────────────────────────────
@@ -285,9 +415,12 @@ async function loadWarehouses(){
   const mine=all.filter(w=>w.user===user);
   whList.innerHTML = mine.length
     ? mine.map(w=>`
-        <li>
+        <li data-wh="${w.id}">
           <span>${w.name}</span>
-          <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button>
+          <div class="actions">
+            <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button>
+            <button class="sec" onclick="delWh(${w.id})" title="Delete"><img src="trash-solid.svg" alt=""></button>
+          </div>
         </li>`).join('')
     : '<li style="justify-content:center;color:#666">No warehouses yet</li>';
 }
@@ -297,6 +430,18 @@ addWh.onclick=async()=>{
   const n=prompt('Warehouse name?'); if(!n) return;
   const id=await db.add('warehouses',{name:n,user,version:0,created:Date.now()});
   openWh(id,n);
+};
+
+/* delete warehouse & items */
+window.delWh = async id=>{
+  if(!confirm('Delete this warehouse and ALL its items?')) return;
+  const tx = db.transaction(['warehouses','items'],'readwrite');
+  await tx.objectStore('warehouses').delete(id);
+  const idx=tx.objectStore('items');
+  for(const it of await idx.getAll()) if(it.whId===id) await idx.delete(it.key);
+  await tx.done;
+  if(id===whId) show('wh');
+  await loadWarehouses();
 };
 
 /*────────────────────────────────────
@@ -310,6 +455,11 @@ const saveItem  = async o =>{
   o.modified=Date.now();
   await db.put('items',o);
   const w=await db.get('warehouses',whId);
+  if(w){w.version=(w.version||0)+1;w.modified=Date.now();await db.put('warehouses',w);}  
+};
+const delItem   = async partId=>{
+  await db.delete('items',key(partId));
+  const w=await db.get('warehouses',whId);
   if(w){w.version=(w.version||0)+1;w.modified=Date.now();await db.put('warehouses',w);}
 };
 const byUPC     = u => db.getAll('items').then(a=>a.find(i=>i.whId===whId && i.upc===u));
@@ -317,45 +467,138 @@ const byUPC     = u => db.getAll('items').then(a=>a.find(i=>i.whId===whId && i.u
 /*────────────────────────────────────
   RENDER LIST  (filter + sort)
 ────────────────────────────────────*/
-async function render(){
+function cmp(a,b,field){
+  const numFields=['min','max','qty'];
+  const av=a[field] ?? '', bv=b[field] ?? '';
+  return numFields.includes(field) ? (av-bv) :
+    String(av).localeCompare(String(bv),undefined,{numeric:true});
+}
+
+async function render (){
   let list = await getAll();
 
-  /* Filter */
+  /* ── Filter ────────────────────────────────── */
   const term = searchInput.value.trim().toLowerCase();
-  if(term){
+  if (term) {
     list = list.filter(i =>
       i.internal.toLowerCase().includes(term) ||
       i.custom?.toLowerCase().includes(term)  ||
-      i.bin?.toLowerCase().includes(term));
+      i.bin?.toLowerCase().includes(term)
+    );
   }
 
-  /* Sort */
-  const [field,dir] = sortSelect.value.split('-');
-  list.sort((a,b)=> (a[field]||'').localeCompare(b[field]||'',undefined,{numeric:true}));
-  if(dir==='desc') list.reverse();
+  /* ── Sort ──────────────────────────────────── */
+  list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
 
-  /* Paint */
-  items.innerHTML = list.map(i=>`
-    <li onclick="edit('${i.internal.replace(/'/g,'&#39;')}')">
-      <div style="flex:1">
-        <span>${i.internal}${i.custom?` / ${i.custom}`:''}</span>
-        <span class="meta">
-          Min&nbsp;${i.min}&nbsp;·&nbsp;Max&nbsp;${i.max}&nbsp;·&nbsp;Bin&nbsp;${i.bin||'—'}
-        </span>
-      </div>
-      <strong>${i.qty}</strong>
-    </li>`).join('');
-  count.textContent = `${whName} · ${list.length} items`;
+  /* ── Paint ─────────────────────────────────── */
+  itemsBody.innerHTML = list.map(i => `
+    <tr data-part="${i.internal.replace(/"/g,'&quot;')}">
+      <td class="chk"><input type="checkbox" class="selRow"></td>
+      <td data-key="internal">${i.internal}</td>
+      <td data-key="custom">${i.custom||''}</td>
+      <td data-key="upc">${i.upc||''}</td>
+      <td data-key="min">${i.min}</td>
+      <td data-key="max">${i.max}</td>
+      <td class="qty" data-key="qty">${i.qty}</td>
+      <td data-key="bin">${i.bin||''}</td>
+      <td class="chk"><img src="trash-solid.svg" class="row-del" title="Delete"></td>
+    </tr>`).join('');
+
+  count.textContent = `${whName} \u00B7 ${list.length} items`;
+
+  /* restore selection after re-render */
+  for(const tr of itemsBody.querySelectorAll('tr')){
+    const part=tr.dataset.part;
+    tr.querySelector('.selRow').checked=selectedParts.has(part);
+  }
+  updateBulkUI();
 }
-window.edit = async internal => { const it=await db.get('items',key(internal)); it&&openManager(it); };
 
 /*────────────────────────────────────
-  SEARCH / SORT CONTROLS
+  SELECTION / BULK DELETE
 ────────────────────────────────────*/
-['input','change'].forEach(ev=>{
-  searchInput.addEventListener(ev,render);
-  sortSelect .addEventListener(ev,render);
+function updateBulkUI(){
+  delSel.style.display = selectedParts.size ? '' : 'none';
+  selectAll.checked = !!selectedParts.size &&
+                      selectedParts.size === itemsBody.querySelectorAll('.selRow').length;
+}
+itemsBody.addEventListener('change', e=>{
+  const cb=e.target.closest('.selRow'); if(!cb) return;
+  const part=cb.closest('tr').dataset.part;
+  cb.checked ? selectedParts.add(part) : selectedParts.delete(part);
+  updateBulkUI();
 });
+selectAll.addEventListener('change', ()=>{
+  const all=itemsBody.querySelectorAll('.selRow');
+  selectedParts.clear();
+  all.forEach(cb=>{
+    cb.checked=selectAll.checked;
+    if(cb.checked) selectedParts.add(cb.closest('tr').dataset.part);
+  });
+  updateBulkUI();
+});
+delSel.onclick = async ()=>{
+  if(!confirm(`Delete ${selectedParts.size} selected items?`)) return;
+  for(const part of selectedParts) await delItem(part);
+  selectedParts.clear();
+  render();
+};
+
+/* row trash icon */
+itemsBody.addEventListener('click', async e=>{
+  const del = e.target.closest('.row-del');
+  if(del){
+    const tr=del.closest('tr'); const part=tr.dataset.part;
+    if(confirm(`Delete ${part}?`)){ await delItem(part); render(); }
+    return;
+  }
+});
+
+/*────────────────────────────────────
+  TABLE CELL INTERACTIONS
+────────────────────────────────────*/
+function startQtyEdit(td){
+  if(td.isContentEditable) return;
+  td.contentEditable='true';
+  td.focus();
+  document.execCommand?.('selectAll',false,null);
+  td.dataset.orig=td.textContent.trim();
+}
+
+itemsBody.addEventListener('click', e=>{
+  const td=e.target.closest('td'); if(!td) return;
+  const field=td.dataset.key;
+  const partId=td.parentElement.dataset.part;
+  if(field==='qty'){ startQtyEdit(td); }
+  else if(!e.target.closest('input') && !e.target.closest('img')) { edit(partId); }
+});
+
+/* save qty on blur */
+itemsBody.addEventListener('blur', async e=>{
+  const td=e.target.closest('td');
+  if(!td || td.dataset.key!=='qty') return;
+  const val=parseInt(td.textContent.trim(),10);
+  const partId=td.parentElement.dataset.part;
+  if(!isNaN(val)){
+    const it=await db.get('items',key(partId));
+    if(it){ it.qty=val; await saveItem(it); }
+    td.textContent=val;
+  }else td.textContent=td.dataset.orig||0;
+  td.removeAttribute('contenteditable');
+},true);
+
+/* commit qty on Enter */
+itemsBody.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    const td=e.target.closest('td');
+    if(td && td.dataset.key==='qty'){ e.preventDefault(); td.blur(); }
+  }
+});
+
+/*────────────────────────────────────
+  SEARCH CONTROL
+────────────────────────────────────*/
+searchInput.addEventListener('input', render);
 
 /*────────────────────────────────────
   PRODUCT MANAGER
@@ -363,12 +606,15 @@ window.edit = async internal => { const it=await db.get('items',key(internal)); 
 function openManager(it={}){
   current = it;
   hdr.textContent = it.internal || 'Add Item';
-  p_internal.value = it.internal||'';  p_custom.value = it.custom||'';
-  p_upc.value      = it.upc||'';       p_qty.value   = it.qty ?? 0;
-  p_min.value      = it.min ?? 0;      p_max.value   = it.max ?? 0;
-  p_bin.value      = it.bin||'';
+  p_internal.value = it.internal||'';  p_custom.value = it.custom||'';  p_upc.value = it.upc||'';
+  p_qty.value = it.qty ?? 0; p_min.value = it.min ?? 0; p_max.value = it.max ?? 0; p_bin.value = it.bin||'';
   prodDlg.showModal();
 }
+
+window.edit = async partId => {
+  const it = await db.get('items', key(partId));
+  if (it) openManager(it);
+};
 
 prodForm.onsubmit = async e=>{
   e.preventDefault();
@@ -383,59 +629,88 @@ prodForm.onsubmit = async e=>{
   };
   try{
     await saveItem(current);
-    prodDlg.close();
-    render();
+    prodDlg.close(); render();
   }catch(err){logError('saveItem',err)}
 };
 closeProd.onclick = ()=>prodDlg.close();
 
 /*────────────────────────────────────
-  BARCODE SCANNER (ZXing)
+  MASS UPC LOGIC
 ────────────────────────────────────*/
-let reader, stream, captureInto=null;   // captureInto = input element to receive code
+async function prepareMassList(){
+  let list = await getAll();
+  /* apply current filter */
+  const term = searchInput.value.trim().toLowerCase();
+  if (term) {
+    list = list.filter(i =>
+      i.internal.toLowerCase().includes(term) ||
+      i.custom?.toLowerCase().includes(term)  ||
+      i.bin?.toLowerCase().includes(term)
+    );
+  }
+  /* sort according to table */
+  list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
+  /* only those without UPC */
+  return list.filter(i=>!i.upc);
+}
 
-fab.onclick     = ()=>startScan(null);   // lookup mode
-btnUPC.onclick  = ()=>{
-  captureInto = p_upc;
-  prodDlg.close();
-  startScan(p_upc);
-};
-scanCancel.onclick = stopScan;
+async function startMassUPC(){
+  massList = await prepareMassList();
+  if(!massList.length){ alert('All visible items already have UPCs'); return; }
+  massMode = true; massIndex = 0; showNextMassItem(); startScan();
+}
+
+function showNextMassItem(){
+  if(massIndex>=massList.length){ scanInfo.textContent=''; return; }
+  const it = massList[massIndex];
+  scanInfo.textContent = `${it.internal}  |  BIN: ${it.bin||''}`;
+}
+
+massUPCBtn.onclick = startMassUPC;
+
+/*────────────────────────────────────
+  BARCODE SCANNER (ZXing) – enhanced
+────────────────────────────────────*/
+let reader, stream, captureInto=null;
+
+fab.onclick     = ()=>startScan(null);
+btnUPC.onclick  = ()=>{ captureInto=p_upc; prodDlg.close(); startScan(); };
+scanCancel.onclick = ()=>{ massMode=false; stopScan(); };
 
 async function startScan(){
   scanDlg.showModal();
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
     cam.srcObject = stream; await cam.play();
-
-    reader = new BrowserMultiFormatReader(undefined,45);   // 45 fps cap
-    reader.decodeFromVideoElement(cam,(res)=>{
-      if(res){ onCode(res.getText()); }
-    });
+    reader = new BrowserMultiFormatReader(undefined,45);
+    reader.decodeFromVideoElement(cam,(res)=> res && onCode(res.getText()));
   }catch(err){
     alert(err.message||err); stopScan(); logError('scan',err);
   }
 }
-
 function stopScan(){
-  reader?.reset?.();
-  stream?.getTracks().forEach(t=>t.stop());
-  scanDlg.close();
+  reader?.reset?.(); stream?.getTracks().forEach(t=>t.stop()); scanDlg.close();
 }
-
 async function onCode(code){
-  stopScan();
-  /* Destination depends on mode */
-  if(captureInto){
-    captureInto.value = code;
-    captureInto = null;
-    prodDlg.showModal();
+  if(massMode){
+    stopScan();
+    const item = massList[massIndex];
+    const it = await db.get('items', key(item.internal));
+    if(it){ it.upc = code; await saveItem(it); }
+    massIndex++;
+    if(massIndex < massList.length){ showNextMassItem(); startScan(); }
+    else{ massMode=false; alert('Mass UPC scanning complete'); render(); }
     return;
   }
-  /* lookup mode */
-  const it = await byUPC(code) || await db.get('items',key(code));
-  if(it){ openManager(it); }
-  else   alert(`${code} not found`);
+
+  stopScan();
+  if(captureInto){
+    captureInto.value=code; captureInto=null;
+    if(current && current.internal){ current.upc = code; await saveItem(current); render(); }
+    prodDlg.showModal(); return;
+  }
+  const it=await byUPC(code) || await db.get('items',key(code));
+  it ? openManager(it) : alert(`${code} not found`);
 }
 
 /*────────────────────────────────────
@@ -444,34 +719,28 @@ async function onCode(code){
 impBtn.onclick = ()=>importFile.click();
 importFile.onchange = async e=>{
   const file=e.target.files[0]; if(!file) return;
-  const ext=file.name.split('.').pop().toLowerCase();
-  let rows=[];
+  const ext=file.name.split('.').pop().toLowerCase(); let rows=[];
   try{
     if(ext==='csv'){
       const txt=await file.text();
-      const Papa = (await import('https://cdn.jsdelivr.net/npm/papaparse@5/+esm')).default;
-      rows = Papa.parse(txt,{header:true}).data;
+      const Papa=(await import('https://cdn.jsdelivr.net/npm/papaparse@5/+esm')).default;
+      rows=Papa.parse(txt,{header:true}).data;
     }else{
       const buf=await file.arrayBuffer();
       const XLSX=(await import('https://cdn.jsdelivr.net/npm/xlsx@0.20.3/+esm')).default;
       const wb=XLSX.read(buf,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      rows=XLSX.utils.sheet_to_json(ws);
+      rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     }
 
     for(const r of rows){
       const internal=String(r['Internal Part']||r.internal||r.Internal||'').trim();
       if(!internal) continue;
-      const exists = await db.get('items',key(internal));
+      const exists=await db.get('items',key(internal));
       if(exists && !confirm(`${internal} exists. Overwrite?`)) continue;
       await saveItem({
-        internal,
-        custom:String(r['Custom Part']||r.custom||r.Custom||'').trim(),
-        upc:String(r.UPC||r.upc||'').trim(),
-        qty:exists?exists.qty:0,
-        min:+(r.Min||r.min||0),
-        max:+(r.Max||r.max||0),
-        bin:String(r.Bin||r.bin||'').trim()
+        internal, custom:String(r['Custom Part']||r.custom||r.Custom||'').trim(),
+        upc:String(r.UPC||r.upc||'').trim(), qty:exists?exists.qty:0,
+        min:+(r.Min||r.min||0), max:+(r.Max||r.max||0), bin:String(r.Bin||r.bin||'').trim()
       });
     }
     render(); importFile.value='';
@@ -485,75 +754,115 @@ tmplBtn.onclick = ()=>{
   const csv=['Internal Part','Custom Part','UPC','Min','Max','Bin'].join(',')+'\n';
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='import_template.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  const a=document.createElement('a'); a.href=url; a.download='import_template.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
 
 /*────────────────────────────────────
-  DATA UPLOAD / BACKUP
+  DATA UPLOAD / BACKUP  (GitHub)
 ────────────────────────────────────*/
-uploadBtn.onclick = async()=>{
-  if(!navigator.onLine){alert('You appear to be offline. Connect to the internet and try again.');return;}
+const GH_REPO   = 'suhedges/VentX';
+const GH_BRANCH = 'main';
+
+async function getToken(){
+  /* use constant if it was replaced by the user */
+  if (HARD_TOKEN && HARD_TOKEN !== 'GITHUBTOKEN') return HARD_TOKEN.trim();
+
+  /* fallback to cached value / prompt */
+  let token = localStorage.getItem('gh_token');
+  if(!token){
+    token = prompt('GitHub Personal Access Token (scope → repo)\nThis is stored only in your browser.');
+    if(token) localStorage.setItem('gh_token', token.trim());
+  }
+  return token?.trim();
+}
+
+async function ghRequest(path, opts={}){
+  const token = await getToken();
+  if(!token) throw new Error('GitHub token required.');
+  const res = await fetch(`https://api.github.com${path}`,{
+    headers:{
+      Authorization:`token ${token}`,
+      Accept:'application/vnd.github+json'
+    }, ...opts
+  });
+  if(res.ok) return res.json();
+  if(res.status===404) return null;   // silent "not found"
+  const txt = await res.text();
+  throw new Error(`GitHub ${res.status}: ${txt}`);
+}
+
+/* ---------- UPLOAD ---------- */
+async function uploadBackup(){
   try{
     const warehouses = (await db.getAll('warehouses')).filter(w=>w.user===user);
     const items      = await db.getAll('items');
-    const payload    = {appVersion:APP_VERSION,user,warehouses,items,timestamp:Date.now()};
+    const payload = {
+      appVersion : APP_VERSION,
+      timestamp  : Date.now(),
+      user,
+      data : warehouses.map(w=>({...w, items: items.filter(i=>i.whId===w.id)}))
+    };
+    const content   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const path      = `backups/${user}.json`;
 
-    const res = await fetch('https://suhedges.github.io/VentX/api/upload',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    /* check if file already exists (to supply SHA for update) */
+    const f = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
+    const sha = f?.sha || null;
+
+    await ghRequest(`/repos/${GH_REPO}/contents/${path}`,{
+      method:'PUT',
+      body:JSON.stringify({
+        message:`VentX backup for ${user} @ ${new Date().toISOString()}`,
+        content, branch:GH_BRANCH, ...(sha && {sha})
+      })
     });
-    if(!res.ok) throw new Error(`Server responded ${res.status}`);
-    const reply = await res.json(); // expected: {latestVersions:{[id]:num}}
-    const conflict = warehouses.some(w => reply.latestVersions?.[w.id] > w.version);
-    if(conflict && !confirm('Remote data is newer than your local copy. Overwrite remote data?')) return;
-    alert('Backup complete ✔');
-  }catch(err){
-    alert('Backup failed. See console for details.');
-    logError('upload',err);
-    console.error(err);
-  }
-};
+    alert('Backup uploaded to GitHub successfully.');
+  }catch(err){ logError('uploadBackup',err); alert('Upload failed → '+err.message); }
+}
+uploadBtn.onclick = uploadBackup;
+uploadBtnWH.onclick = uploadBackup;
 
-/*────────────────────────────────────
-  NEW: BACKUP DOWNLOAD
-────────────────────────────────────*/
-downloadBtn.onclick = async () => {
-  if (!navigator.onLine) {
-    alert('You are offline – cannot fetch backups.');
-    return;
-  }
-  try {
-    const url =
-      `https://suhedges.github.io/VentX/backups/${user}/latest.json?` +
-      Date.now(); // bust cache
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('No backup found for this user.');
-    const blob = await res.blob();
+/* ---------- DOWNLOAD ---------- */
+async function downloadBackup(){
+  if(!confirm('This will OVERWRITE your current data with the GitHub backup. Continue?')) return;
+  try{
+    const path  = `backups/${user}.json`;
+    const file  = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
+    if(!file){ alert('No backup found on GitHub.'); return; }
+    const json  = JSON.parse(decodeURIComponent(escape(atob(file.content))));
+    if(!json.data) throw new Error('Invalid backup format.');
 
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download =
-      `VentX-backup-${user}-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  } catch (err) {
-    alert(`Download failed: ${err.message}`);
-    logError('download', err);
-  }
-};
+    /* wipe old user data then repopulate */
+    const tx = db.transaction(['warehouses','items'],'readwrite');
+    const wStore = tx.objectStore('warehouses');
+    const iStore = tx.objectStore('items');
+
+    for(const w of await wStore.getAll()) if(w.user===user) await wStore.delete(w.id);
+    for(const it of await iStore.getAll()) if(it.whId) await iStore.delete(it.key);
+
+    for(const bw of json.data){
+      await wStore.put(bw);
+      for(const it of bw.items) await iStore.put(it);
+    }
+    await tx.done;
+
+    alert('Backup restored. Reloading…');
+    location.reload();       // full UI refresh
+  }catch(err){ logError('downloadBackup',err); alert('Download failed → '+err.message); }
+}
+downloadBtn.onclick = downloadBackup;
 
 /*────────────────────────────────────
   NAVIGATION
 ────────────────────────────────────*/
-backWh.onclick = ()=>{ show('wh'); loadWarehouses(); };
+backWh.onclick=()=>{ show('wh'); loadWarehouses(); };
 
 /*────────────────────────────────────
-  SERVICE-WORKER  (register after all listeners)
+  SERVICE-WORKER
 ────────────────────────────────────*/
-if('serviceWorker' in navigator)
-  navigator.serviceWorker.register('sw.js');
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
 </script>
 </body>
 </html>
