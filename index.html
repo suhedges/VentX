@@ -655,10 +655,6 @@ massUPCBtn.onclick = startMassUPC;
 /*────────────────────────────────────
   BARCODE SCANNER (ZXing)
 ────────────────────────────────────*/
-const NATIVE_FORMATS = [
-  'code_128','code_39','ean_13','ean_8','upc_a','upc_e','qr_code'
-];
-
 const ZXING_HINTS = new Map([
   [DecodeHintType.POSSIBLE_FORMATS, [
     BarcodeFormat.UPC_A,  BarcodeFormat.UPC_E,
@@ -677,6 +673,7 @@ const SCAN_CONSTRAINTS = {
 };
 
 let reader, stream, captureInto = null;
+let autoFocusInterval = null;       // ★ autofocus
 
 /* UI helpers */
 fab.onclick        = () => startScan();
@@ -693,7 +690,7 @@ async function startScan () {
     await cam.play();
 
     const track = stream.getVideoTracks()[0];
-    await applyAutoFocus(track);          // lens → continuous
+    await applyAutoFocus(track);          // ★ lens → continuous / single‑shot loop
     maybeAddTorch(track);                 // show torch button if possible
     enableTapFocus(track);                // click to refocus
 
@@ -712,8 +709,29 @@ async function startScan () {
 /* ––––––––– autofocus helpers ––––––––– */
 async function applyAutoFocus (track) {
   const caps = track.getCapabilities?.() || {};
-  if (caps.focusMode?.includes('continuous')) {
-    await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+  const modes = caps.focusMode || [];
+  try {
+    if (modes.includes('continuous')) {
+      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+    } else if (modes.includes('single-shot')) {
+      await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+    }
+
+    /* If focus distance is supported, bias toward the nearest end for close‑ups */
+    if (caps.focusDistance && typeof caps.focusDistance.min === 'number') {
+      await track.applyConstraints({
+        advanced: [{ focusDistance: caps.focusDistance.min }]
+      });
+    }
+  } catch {/* ignore unsupported */}
+  
+  /* ★ Kick single‑shot every 1.5 s (many phones need this nudge) */
+  if (modes.includes('single-shot')) {
+    autoFocusInterval = setInterval(async () => {
+      try {
+        await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+      } catch { /* ignore */ }
+    }, 1500);
   }
 }
 
@@ -721,14 +739,19 @@ function enableTapFocus (track) {
   const caps = track.getCapabilities?.() || {};
   if (!caps.pointsOfInterest) return;
 
-  cam.addEventListener('click', async e => {
+  cam.onclick = async e => {
     const r = cam.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width;
     const y = (e.clientY - r.top)  / r.height;
     try {
-      await track.applyConstraints({ advanced: [{ pointsOfInterest: [{ x, y }] }] });
+      await track.applyConstraints({
+        advanced: [
+          { pointsOfInterest: [{ x, y }] },
+          { focusMode: caps.focusMode?.includes('single-shot') ? 'single-shot' : 'continuous' }
+        ]
+      });
     } catch { /* ignore */ }
-  }, { once: true }); // re-add after each restart if you like
+  };
 }
 
 function maybeAddTorch (track) {
@@ -757,7 +780,7 @@ function startNativeDetector (track) {
   const capture = new ImageCapture(track);
 
   const loop = async () => {
-    if (!scanDlg.open) return;          // dialog closed
+    if (!scanDlg.open) return;
     try {
       const bmp = await capture.grabFrame();
       const codes = await detector.detect(bmp);
@@ -770,7 +793,7 @@ function startNativeDetector (track) {
 
 /* ––––––––– ZXing fallback ––––––––– */
 function startZXingDetector () {
-  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200); // 200 ms throttle
+  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200);
   reader.decodeFromConstraints(SCAN_CONSTRAINTS, cam, (result, err) => {
     if (result) onCode(result.getText());
   });
@@ -780,8 +803,48 @@ function startZXingDetector () {
 function stopScan () {
   reader?.reset?.();
   stream?.getTracks().forEach(t => t.stop());
+  clearInterval(autoFocusInterval); autoFocusInterval=null;   // ★ clear loop
   scanDlg.close();
   document.getElementById('torchBtn')?.remove();
+}
+
+/*────────────  HANDLING SCAN RESULT  ────────────*/
+async function onCode (code) {
+  // Existing logic unchanged…
+  if (captureInto) {
+    captureInto.value = code;
+    captureInto = null;
+    stopScan();
+    prodDlg.showModal();
+    return;
+  }
+
+  if (massMode) {
+    const it = massList[massIndex];
+    it.upc = code;
+    await saveItem(it);
+    massIndex++;
+    if (massIndex < massList.length) {
+      showNextMassItem();
+    } else {
+      massMode = false;
+      alert('Mass UPC complete!');
+      stopScan();
+      render();
+    }
+    return;
+  }
+
+  const existing = await byUPC(code);
+  if (existing) {
+    alert(`UPC already exists on ${existing.internal}`);
+    stopScan();
+    return;
+  }
+
+  p_upc.value = code;
+  stopScan();
+  prodDlg.showModal();
 }
 /*────────────────────────────────────
   IMPORT CSV / XLSX
