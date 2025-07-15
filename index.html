@@ -1,59 +1,99 @@
+<!--  index.html  –  replace the old file completely  -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Phone Stock Manager</title>
+<title>VentX – Phone Stock Manager</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
 
 <style>
-  :root{--blue:#2563eb;--gray:#1f2937;font-family:system-ui}
+  /* ───────────  THEME  ─────────── */
+  :root{
+    --blue:#2563eb;
+    --gray:#1f2937;
+    --radius:8px;
+    font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   body,html{height:100%}
-  body{display:flex;flex-direction:column;background:#f8fafc}
+  body{display:flex;flex-direction:column;background:#f8fafc;color:#111}
 
-  /* Shared */
-  button{border:none;border-radius:6px;padding:.5rem 1rem;font-size:1rem;cursor:pointer}
+  /* ───────────  SHARED  ─────────── */
+  button{
+    border:none;border-radius:6px;padding:.5rem 1rem;
+    font-size:1rem;cursor:pointer;line-height:1.2
+  }
   .sec{background:#e5e7eb}
   .pri{background:var(--blue);color:#fff}
+  input,select{
+    width:100%;padding:.45rem;border:1px solid #cbd5e1;border-radius:4px;font-size:1rem
+  }
+  label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
 
-  /* dialogs – force true centering on every viewport */
-  dialog{border:none;border-radius:8px;padding:1rem;width:92%;max-width:420px;
-         position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);}
+  /* ───────────  DIALOGS  ─────────── */
+  dialog{
+    border:none;border-radius:var(--radius);padding:1rem;width:92%;max-width:480px;
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#fff
+  }
   dialog::backdrop{background:#0007}
-  video{width:100%;border-radius:8px}
-  h2{margin-bottom:1rem}
 
-  /* Screens */
+  /* ───────────  SCREENS  ─────────── */
   .screen{flex:1;display:none;flex-direction:column}
   .show{display:flex}
 
-  /* Login */
-  #login form{margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
-              padding:2rem;border-radius:8px;background:#fff}
-  #login label{display:block;margin-top:1rem;font-weight:600}
-  #login input{width:100%;padding:.45rem;border:1px solid #cbd5e1;border-radius:4px;font-size:1rem;margin-top:.25rem}
+  /* ───────────  LOGIN  ─────────── */
+  #login form{
+    margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
+    padding:2rem;border-radius:var(--radius);background:#fff
+  }
+  #login h2{margin-bottom:1rem;text-align:center}
+  #installBtn{margin-top:.6rem;width:100%;display:none}
 
-  /* Warehouses */
+  /* ───────────  WAREHOUSES  ─────────── */
   #wh header{background:var(--gray);color:#fff;padding:.8rem 1rem;font-size:1.25rem}
   #wh ul{list-style:none;padding:1rem;gap:.6rem;display:flex;flex-direction:column}
-  #wh li{padding:.7rem .9rem;border:1px solid #d1d5db;border-radius:6px;
-        display:flex;justify-content:space-between;align-items:center;background:#fff}
+  #wh li{
+    padding:.7rem .9rem;border:1px solid #d1d5db;border-radius:6px;
+    display:flex;justify-content:space-between;align-items:center;background:#fff
+  }
 
-  /* Main */
-  #main header{display:flex;gap:.6rem;background:var(--gray);color:#fff;
-               padding:.7rem .9rem;align-items:center}
+  /* ───────────  MAIN  ─────────── */
+  #main header{
+    display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;
+    background:var(--gray);color:#fff;padding:.7rem .9rem
+  }
+  #main header input{max-width:220px}
+  #main header select{width:auto}
   #main header span{margin-left:auto}
   #items{flex:1;overflow:auto;padding:1rem;list-style:none}
-  #items li{margin:.25rem 0;padding:.4rem .6rem;border:1px solid #d1d5db;
-            border-radius:6px;display:flex;justify-content:space-between;background:#fff}
+  #items li{
+    margin:.25rem 0;padding:.4rem .6rem;border:1px solid #d1d5db;
+    border-radius:6px;display:flex;justify-content:space-between;align-items:flex-start;
+    background:#fff;gap:.75rem
+  }
   #items li:hover{cursor:pointer;background:#eceded}
-  #fab{position:fixed;right:1rem;bottom:1rem;width:56px;height:56px;
-       background:var(--blue);color:#fff;border:none;border-radius:50%;
-       font-size:28px;box-shadow:0 4px 12px #0004}
-  .meta{display:block;font-size:.8rem;color:#555;margin-top:.15rem}
+  #items .meta{font-size:.8rem;color:#555;margin-top:.15rem}
+  #fab{
+    position:fixed;right:1rem;bottom:1rem;width:56px;height:56px;
+    background:var(--blue);color:#fff;border:none;border-radius:50%;
+    font-size:28px;box-shadow:0 4px 12px #0004
+  }
+
+  /* ───────────  PROD-DIALOG GRID  ─────────── */
+  #prodDlg form{
+    display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))
+  }
+  #prodDlg h3{grid-column:1/-1;margin-bottom:.25rem;text-align:center}
+  #prodDlg .full{grid-column:1/-1}
+  #prodDlg .row{display:flex;gap:.5rem}
+  #prodDlg .actions{grid-column:1/-1;display:flex;gap:.6rem;justify-content:flex-end;margin-top:.25rem}
+
+  /* ───────────  SCAN-DIALOG  ─────────── */
+  #scanDlg video{width:100%;border-radius:var(--radius)}
 </style>
 </head>
 <body>
@@ -61,14 +101,11 @@
 <!----- LOGIN ----->
 <section id="login" class="screen show">
   <form id="loginForm">
-    <h2 align="center">Login</h2>
-    <label>Username
-      <input id="l_user" required>
-    </label>
-    <label>Password
-      <input id="l_pass" type="password" required>
-    </label>
+    <h2>Login</h2>
+    <label>Username <input id="l_user" required></label>
+    <label>Password <input id="l_pass" type="password" required></label>
     <button class="pri" style="margin-top:1.5rem;width:100%">Sign in</button>
+    <button id="installBtn" class="sec">Install App</button>
   </form>
 </section>
 
@@ -85,8 +122,19 @@
     <button id="backWh" class="sec">Warehouses</button>
     <button id="impBtn"  class="sec">Import</button>
     <button id="tmplBtn" class="sec">Download&nbsp;Template</button>
+    <button id="uploadBtn" class="sec">Upload</button>
+    <button id="downloadBtn" class="sec">Download&nbsp;Backup</button>
+
+    <input id="searchInput" placeholder="Search…">
+    <select id="sortSelect" class="sec" title="Sort" placeholder:"Sort">
+      <option value="internal">Part # ↑</option>
+      <option value="internal-desc">Part # ↓</option>
+      <option value="bin">Bin ↑</option>
+      <option value="bin-desc">Bin ↓</option>
+    </select>
     <span id="count"></span>
   </header>
+
   <ul id="items"></ul>
   <button id="fab" title="Scan product">📷</button>
 </section>
@@ -95,27 +143,31 @@
 <dialog id="scanDlg">
   <video id="cam" playsinline></video>
   <p align="center">Point camera at barcode…</p>
-  <button class="sec" id="scanCancel">Cancel</button>
+  <button class="sec" id="scanCancel" style="width:100%">Cancel</button>
 </dialog>
 
 <!----- PRODUCT MANAGER ----->
 <dialog id="prodDlg">
-  <form id="prodForm">
-    <h3 id="hdr"></h3>
-    <label>Internal Part <input id="p_internal" required></label>
-    <label>Custom Part <input id="p_custom"></label>
-    <label>UPC
-      <div style="display:flex;gap:.5rem">
-        <input id="p_upc" style="flex:1">
-        <button type="button" class="sec" onclick="scanIntoUPC()">Scan&nbsp;UPC</button>
+  <form id="prodForm" novalidate>
+    <h3 id="hdr">Add / Edit Item</h3>
+
+    <label class="full">Internal&nbsp;Part <input id="p_internal" required></label>
+    <label class="full">Custom&nbsp;Part <input id="p_custom"></label>
+
+    <label class="full">UPC
+      <div class="row">
+        <input id="p_upc">
+        <button type="button" class="sec" id="btnUPC">Scan UPC</button>
       </div>
     </label>
+
     <label>Qty <input id="p_qty" type="number" required></label>
     <label>Min <input id="p_min" type="number" required></label>
     <label>Max <input id="p_max" type="number" required></label>
-    <label>Bin <input id="p_bin"></input></label>
-    <div style="margin-top:1rem;text-align:right;display:flex;gap:.5rem">
-      <button type="button" class="sec" onclick="prodDlg.close()">Close</button>
+    <label class="full">Bin <input id="p_bin"></label>
+
+    <div class="actions">
+      <button type="button" class="sec" id="closeProd">Close</button>
       <button class="pri">Save</button>
     </div>
   </form>
@@ -125,165 +177,243 @@
 <input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none">
 
 <script type="module">
-/*────────────────────────────────────
-  DOM references
-────────────────────────────────────*/
-const scanDlg   = document.getElementById('scanDlg');
-const scanCancel= document.getElementById('scanCancel');
-const cam       = document.getElementById('cam');
-const fab       = document.getElementById('fab');
-const impBtn    = document.getElementById('impBtn');
-const tmplBtn   = document.getElementById('tmplBtn');
-const importFile= document.getElementById('importFile');
-const loginForm = document.getElementById('loginForm');
-const l_user    = document.getElementById('l_user');
-const l_pass    = document.getElementById('l_pass');
-const whList    = document.getElementById('whList');
-const addWh     = document.getElementById('addWh');
-const p_internal= document.getElementById('p_internal');
-const p_custom  = document.getElementById('p_custom');
-const p_upc     = document.getElementById('p_upc');
-const p_qty     = document.getElementById('p_qty');
-const p_min     = document.getElementById('p_min');
-const p_max     = document.getElementById('p_max');
-const p_bin     = document.getElementById('p_bin');
-const hdr       = document.getElementById('hdr');
-const prodDlg   = document.getElementById('prodDlg');
-const prodForm  = document.getElementById('prodForm');
-const backWh    = document.getElementById('backWh');
-const items     = document.getElementById('items');
-const count     = document.getElementById('count');
+
+const downloadBtn = $('downloadBtn');
 
 /*────────────────────────────────────
-  External libs
+  EXTERNAL LIBS (lazy-loaded where possible)
 ────────────────────────────────────*/
 import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
 import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library@0.20.0';
 
 /*────────────────────────────────────
-  Global helpers
+  CONSTANTS
 ────────────────────────────────────*/
-let user=null, whId=null, whName=null;
+const APP_VERSION = '2025-07-15';
+
+/*────────────────────────────────────
+  DOM REFERENCES
+────────────────────────────────────*/
+const $ = id => document.getElementById(id);
+const scanDlg=$('scanDlg'), scanCancel=$('scanCancel'), cam=$('cam');
+const fab=$('fab'), impBtn=$('impBtn'), tmplBtn=$('tmplBtn'), importFile=$('importFile');
+const loginForm=$('loginForm'), l_user=$('l_user'), l_pass=$('l_pass'), installBtn=$('installBtn');
+const whList=$('whList'), addWh=$('addWh');
+const p_internal=$('p_internal'), p_custom=$('p_custom'), p_upc=$('p_upc');
+const p_qty=$('p_qty'), p_min=$('p_min'), p_max=$('p_max'), p_bin=$('p_bin');
+const hdr=$('hdr'), prodDlg=$('prodDlg'), prodForm=$('prodForm');
+const closeProd=$('closeProd'), btnUPC=$('btnUPC');
+const backWh=$('backWh'), items=$('items'), count=$('count');
+const searchInput=$('searchInput'), sortSelect=$('sortSelect'), uploadBtn=$('uploadBtn');
+
+/*────────────────────────────────────
+  STATE HELPERS
+────────────────────────────────────*/
+let user=null, whId=null, whName=null, current=null, deferredPrompt=null;
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
 
 /*────────────────────────────────────
-  IndexedDB
+  INDEXED-DB
 ────────────────────────────────────*/
-const db = await openDB('inventory', 3, {
-  upgrade(db, oldVersion) {
-    if (!db.objectStoreNames.contains('users'))
-      db.createObjectStore('users', { keyPath: 'name' });
-
-    if (!db.objectStoreNames.contains('warehouses'))
-      db.createObjectStore('warehouses', { keyPath: 'id', autoIncrement: true });
-
-    if (!db.objectStoreNames.contains('items'))
-      db.createObjectStore('items', { keyPath: 'key' });
+const db = await openDB('inventory', 4, {
+  upgrade(db, oldVersion){
+    if(oldVersion<1 && !db.objectStoreNames.contains('users'))
+      db.createObjectStore('users',{keyPath:'name'});
+    if(oldVersion<2 && !db.objectStoreNames.contains('warehouses'))
+      db.createObjectStore('warehouses',{keyPath:'id',autoIncrement:true});
+    if(oldVersion<3 && !db.objectStoreNames.contains('items'))
+      db.createObjectStore('items',{keyPath:'key'});
+    if(oldVersion<4 && !db.objectStoreNames.contains('logs'))
+      db.createObjectStore('logs',{keyPath:'ts'});
   }
 });
-await navigator.storage?.persist?.();
+await navigator.storage?.persist?.();          // ask for persistent quota
 
-/* seed users */
-for(const u of ['US1','US2']) if(!(await db.get('users',u))) db.put('users',{name:u,pass:u});
+/* seed demo users */
+for(const u of ['US1','US2'])
+  if(!(await db.get('users',u))) db.put('users',{name:u,pass:u});
+
+/* simple logger */
+async function logError(type,msg){
+  try{ await db.put('logs',{ts:Date.now(),type,msg:String(msg)}) }catch(e){console.error(e)}
+}
 
 /*────────────────────────────────────
-  Login flow
+  INSTALL (PWA)
 ────────────────────────────────────*/
-loginForm.onsubmit=async e=>{
+window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault();
-  const rec=await db.get('users',l_user.value.trim());
-  if(rec?.pass===l_pass.value.trim()){
-    user=rec.name; await loadWarehouses(); show('wh');
-  }else alert('Invalid credentials');
+  deferredPrompt = e;
+  installBtn.style.display='block';
+});
+installBtn.onclick = async()=>{
+  try{
+    if(window.matchMedia('(display-mode: standalone)').matches){
+      const overwrite = confirm('VentX is already installed. Overwrite installation?');
+      if(!overwrite) return;
+      // clear existing caches so the new build installs fresh
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const res = await deferredPrompt.userChoice;
+      if(res.outcome==='accepted') installBtn.style.display='none';
+      deferredPrompt=null;
+    }
+  }catch(err){logError('install',err)}
 };
 
 /*────────────────────────────────────
-  Warehouses
+  LOGIN
+────────────────────────────────────*/
+loginForm.onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    const rec=await db.get('users',l_user.value.trim());
+    if(rec?.pass===l_pass.value.trim()){
+      user=rec.name; await loadWarehouses(); show('wh');
+    }else alert('Invalid credentials');
+  }catch(err){logError('login',err)}
+};
+
+/*────────────────────────────────────
+  WAREHOUSES
 ────────────────────────────────────*/
 async function loadWarehouses(){
   const all=await db.getAll('warehouses');
   const mine=all.filter(w=>w.user===user);
-  whList.innerHTML=mine.map(w=>`
-    <li><span>${w.name}</span>
-        <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button></li>`
-  ).join('')||'<li style="justify-content:center;color:#666">No warehouses yet</li>';
+  whList.innerHTML = mine.length
+    ? mine.map(w=>`
+        <li>
+          <span>${w.name}</span>
+          <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button>
+        </li>`).join('')
+    : '<li style="justify-content:center;color:#666">No warehouses yet</li>';
 }
 window.openWh=(id,name)=>{whId=id;whName=name;render();show('main');};
 
 addWh.onclick=async()=>{
   const n=prompt('Warehouse name?'); if(!n) return;
-  const id=await db.add('warehouses',{name:n,user});
+  const id=await db.add('warehouses',{name:n,user,version:0,created:Date.now()});
   openWh(id,n);
 };
 
 /*────────────────────────────────────
-  Item helpers
+  ITEM HELPERS
 ────────────────────────────────────*/
-const key=partId=>`${whId}|${partId}`;
-const allItems=()=>db.getAll('items').then(a=>a.filter(i=>i.whId===whId).sort((a,b)=>a.internal.localeCompare(b.internal)));
-const saveItem=o=>{o.key=key(o.internal);o.whId=whId;return db.put('items',o);};
-const byUPC=u=>db.getAll('items').then(a=>a.find(i=>i.whId===whId&&i.upc===u));
+const key       = partId => `${whId}|${partId}`;
+const getAll    = () => db.getAll('items').then(a=>a.filter(i=>i.whId===whId));
+const saveItem  = async o =>{
+  o.key=key(o.internal);
+  o.whId=whId;
+  o.modified=Date.now();
+  await db.put('items',o);
+  const w=await db.get('warehouses',whId);
+  if(w){w.version=(w.version||0)+1;w.modified=Date.now();await db.put('warehouses',w);}
+};
+const byUPC     = u => db.getAll('items').then(a=>a.find(i=>i.whId===whId && i.upc===u));
 
 /*────────────────────────────────────
-  Main view  (now shows Min / Max / Bin)
+  RENDER LIST  (filter + sort)
 ────────────────────────────────────*/
 async function render(){
-  const list=await allItems();
-  items.innerHTML=list.map(i=>`
+  let list = await getAll();
+
+  /* Filter */
+  const term = searchInput.value.trim().toLowerCase();
+  if(term){
+    list = list.filter(i =>
+      i.internal.toLowerCase().includes(term) ||
+      i.custom?.toLowerCase().includes(term)  ||
+      i.bin?.toLowerCase().includes(term));
+  }
+
+  /* Sort */
+  const [field,dir] = sortSelect.value.split('-');
+  list.sort((a,b)=> (a[field]||'').localeCompare(b[field]||'',undefined,{numeric:true}));
+  if(dir==='desc') list.reverse();
+
+  /* Paint */
+  items.innerHTML = list.map(i=>`
     <li onclick="edit('${i.internal.replace(/'/g,'&#39;')}')">
       <div style="flex:1">
         <span>${i.internal}${i.custom?` / ${i.custom}`:''}</span>
-        <span class="meta">Min&nbsp;${i.min}&nbsp;·&nbsp;Max&nbsp;${i.max}&nbsp;·&nbsp;Bin&nbsp;${i.bin||'—'}</span>
+        <span class="meta">
+          Min&nbsp;${i.min}&nbsp;·&nbsp;Max&nbsp;${i.max}&nbsp;·&nbsp;Bin&nbsp;${i.bin||'—'}
+        </span>
       </div>
-      <b>${i.qty}</b>
+      <strong>${i.qty}</strong>
     </li>`).join('');
-  count.textContent=`${whName} · ${list.length} items`;
+  count.textContent = `${whName} · ${list.length} items`;
 }
-window.edit=async internal=>{const it=await db.get('items',key(internal));it&&openManager(it);} ;
+window.edit = async internal => { const it=await db.get('items',key(internal)); it&&openManager(it); };
 
 /*────────────────────────────────────
-  Product manager dialog
+  SEARCH / SORT CONTROLS
 ────────────────────────────────────*/
-let current=null, reader, stream, scanMode='lookup';
-function openManager(it){
-  current=it;
-  hdr.textContent=it.internal;
-  p_internal.value=it.internal; p_custom.value=it.custom||''; p_upc.value=it.upc||'';
-  p_qty.value=it.qty; p_min.value=it.min; p_max.value=it.max; p_bin.value=it.bin||'';
+['input','change'].forEach(ev=>{
+  searchInput.addEventListener(ev,render);
+  sortSelect .addEventListener(ev,render);
+});
+
+/*────────────────────────────────────
+  PRODUCT MANAGER
+────────────────────────────────────*/
+function openManager(it={}){
+  current = it;
+  hdr.textContent = it.internal || 'Add Item';
+  p_internal.value = it.internal||'';  p_custom.value = it.custom||'';
+  p_upc.value      = it.upc||'';       p_qty.value   = it.qty ?? 0;
+  p_min.value      = it.min ?? 0;      p_max.value   = it.max ?? 0;
+  p_bin.value      = it.bin||'';
   prodDlg.showModal();
 }
-prodForm.onsubmit=async e=>{
+
+prodForm.onsubmit = async e=>{
   e.preventDefault();
-  current={internal:p_internal.value.trim(),custom:p_custom.value.trim(),upc:p_upc.value.trim(),
-           qty:+p_qty.value||0,min:+p_min.value||0,max:+p_max.value||0,bin:p_bin.value.trim()};
-  await saveItem(current); prodDlg.close(); render();
+  current = {
+    internal : p_internal.value.trim(),
+    custom   : p_custom.value.trim(),
+    upc      : p_upc.value.trim(),
+    qty      : +p_qty.value||0,
+    min      : +p_min.value||0,
+    max      : +p_max.value||0,
+    bin      : p_bin.value.trim()
+  };
+  try{
+    await saveItem(current);
+    prodDlg.close();
+    render();
+  }catch(err){logError('saveItem',err)}
 };
-function scanIntoUPC(){startScan('upc');}
+closeProd.onclick = ()=>prodDlg.close();
 
 /*────────────────────────────────────
-  Scanner (lookup / UPC capture) – ZXing only
+  BARCODE SCANNER (ZXing)
 ────────────────────────────────────*/
-fab.onclick=()=>startScan('lookup');
-scanCancel.onclick=stopScan;
+let reader, stream, captureInto=null;   // captureInto = input element to receive code
 
-async function startScan(mode){
-  scanMode=mode;
+fab.onclick     = ()=>startScan(null);   // lookup mode
+btnUPC.onclick  = ()=>{
+  captureInto = p_upc;
+  prodDlg.close();
+  startScan(p_upc);
+};
+scanCancel.onclick = stopScan;
+
+async function startScan(){
   scanDlg.showModal();
-
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
-    cam.srcObject = stream;
-    await cam.play();
+    cam.srcObject = stream; await cam.play();
 
-    reader = new BrowserMultiFormatReader();
-
-    // Start decoding frames continuously
-    reader.decodeFromVideoElement(cam, (result, err) => {
-      if(result){ onCode(result.getText()); }
+    reader = new BrowserMultiFormatReader(undefined,45);   // 45 fps cap
+    reader.decodeFromVideoElement(cam,(res)=>{
+      if(res){ onCode(res.getText()); }
     });
   }catch(err){
-    alert(err.message || err);
-    stopScan();
+    alert(err.message||err); stopScan(); logError('scan',err);
   }
 }
 
@@ -295,76 +425,135 @@ function stopScan(){
 
 async function onCode(code){
   stopScan();
-  if(scanMode==='lookup'){
-    const it=await byUPC(code)||await db.get('items',key(code));
-    it?openManager(it):alert(`${code} not found`);
-  }else p_upc.value=code;
+  /* Destination depends on mode */
+  if(captureInto){
+    captureInto.value = code;
+    captureInto = null;
+    prodDlg.showModal();
+    return;
+  }
+  /* lookup mode */
+  const it = await byUPC(code) || await db.get('items',key(code));
+  if(it){ openManager(it); }
+  else   alert(`${code} not found`);
 }
 
 /*────────────────────────────────────
-  Import CSV/XLSX
+  IMPORT CSV / XLSX
 ────────────────────────────────────*/
-impBtn.onclick=()=>importFile.click();
-importFile.onchange=async e=>{
+impBtn.onclick = ()=>importFile.click();
+importFile.onchange = async e=>{
   const file=e.target.files[0]; if(!file) return;
   const ext=file.name.split('.').pop().toLowerCase();
   let rows=[];
-  if(ext==='csv'){
-    const txt=await file.text();
-    const Papa = (await import('https://cdn.jsdelivr.net/npm/papaparse@5/+esm')).default;
-    rows = Papa.parse(txt,{ header:true }).data;
-  }else{
-    const buf=await file.arrayBuffer();
-    const XLSX=await import('https://cdn.jsdelivr.net/npm/xlsx@0.20.3/+esm');
-    const wb=XLSX.read(buf,{type:'array'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    rows=XLSX.utils.sheet_to_json(ws);
-  }
+  try{
+    if(ext==='csv'){
+      const txt=await file.text();
+      const Papa = (await import('https://cdn.jsdelivr.net/npm/papaparse@5/+esm')).default;
+      rows = Papa.parse(txt,{header:true}).data;
+    }else{
+      const buf=await file.arrayBuffer();
+      const XLSX=(await import('https://cdn.jsdelivr.net/npm/xlsx@0.20.3/+esm')).default;
+      const wb=XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      rows=XLSX.utils.sheet_to_json(ws);
+    }
 
-  for(const r of rows){
-    const internal=String(r['Internal Part']||r.internal||r.Internal||'').trim();
-    if(!internal) continue;
-    const exists=await db.get('items',key(internal));
-    if(exists&&!confirm(`${internal} exists. Overwrite?`)) continue;
-    await saveItem({
-      internal,
-      custom:String(r['Custom Part']||r.custom||r.Custom||'').trim(),
-      upc:String(r.UPC||r.upc||'').trim(),
-      qty:exists?exists.qty:0,
-      min:+(r.Min||r.min||0),
-      max:+(r.Max||r.max||0),
-      bin:String(r.Bin||r.bin||'').trim()
-    });
-  }
-  render(); importFile.value='';
+    for(const r of rows){
+      const internal=String(r['Internal Part']||r.internal||r.Internal||'').trim();
+      if(!internal) continue;
+      const exists = await db.get('items',key(internal));
+      if(exists && !confirm(`${internal} exists. Overwrite?`)) continue;
+      await saveItem({
+        internal,
+        custom:String(r['Custom Part']||r.custom||r.Custom||'').trim(),
+        upc:String(r.UPC||r.upc||'').trim(),
+        qty:exists?exists.qty:0,
+        min:+(r.Min||r.min||0),
+        max:+(r.Max||r.max||0),
+        bin:String(r.Bin||r.bin||'').trim()
+      });
+    }
+    render(); importFile.value='';
+  }catch(err){logError('import',err)}
 };
 
 /*────────────────────────────────────
-  Import-template generator
+  CSV TEMPLATE
 ────────────────────────────────────*/
-tmplBtn.onclick=()=>{
-  const cols=['Internal Part','Custom Part','UPC','Min','Max','Bin'];
-  const csv=cols.join(',')+'\n';
+tmplBtn.onclick = ()=>{
+  const csv=['Internal Part','Custom Part','UPC','Min','Max','Bin'].join(',')+'\n';
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;
-  a.download='import_template.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  a.href=url; a.download='import_template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 };
 
 /*────────────────────────────────────
-  Navigation
+  DATA UPLOAD / BACKUP
 ────────────────────────────────────*/
-backWh.onclick=()=>{show('wh');loadWarehouses();};
+uploadBtn.onclick = async()=>{
+  if(!navigator.onLine){alert('You appear to be offline. Connect to the internet and try again.');return;}
+  try{
+    const warehouses = (await db.getAll('warehouses')).filter(w=>w.user===user);
+    const items      = await db.getAll('items');
+    const payload    = {appVersion:APP_VERSION,user,warehouses,items,timestamp:Date.now()};
+
+    const res = await fetch('https://suhedges.github.io/VentX/api/upload',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error(`Server responded ${res.status}`);
+    const reply = await res.json(); // expected: {latestVersions:{[id]:num}}
+    const conflict = warehouses.some(w => reply.latestVersions?.[w.id] > w.version);
+    if(conflict && !confirm('Remote data is newer than your local copy. Overwrite remote data?')) return;
+    alert('Backup complete ✔');
+  }catch(err){
+    alert('Backup failed. See console for details.');
+    logError('upload',err);
+    console.error(err);
+  }
+};
 
 /*────────────────────────────────────
-  Service-worker
+  NEW: BACKUP DOWNLOAD
 ────────────────────────────────────*/
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+downloadBtn.onclick = async () => {
+  if (!navigator.onLine) {
+    alert('You are offline – cannot fetch backups.');
+    return;
+  }
+  try {
+    const url =
+      `https://suhedges.github.io/VentX/backups/${user}/latest.json?` +
+      Date.now(); // bust cache
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('No backup found for this user.');
+    const blob = await res.blob();
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download =
+      `VentX-backup-${user}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch (err) {
+    alert(`Download failed: ${err.message}`);
+    logError('download', err);
+  }
+};
+
+/*────────────────────────────────────
+  NAVIGATION
+────────────────────────────────────*/
+backWh.onclick = ()=>{ show('wh'); loadWarehouses(); };
+
+/*────────────────────────────────────
+  SERVICE-WORKER  (register after all listeners)
+────────────────────────────────────*/
+if('serviceWorker' in navigator)
+  navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
