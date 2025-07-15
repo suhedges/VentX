@@ -24,19 +24,11 @@ body{display:flex;flex-direction:column;background:var(--light);color:#111}
 
 /* ───────────  SHARED  ─────────── */
 button{
-  --bg:#e5e7eb;
-  --fg:#111;
-  border:none;
-  border-radius:6px;
-  padding:.55rem 1.05rem;
-  font-size:1rem;
-  cursor:pointer;
-  line-height:1.2;
-  display:inline-flex;
-  align-items:center;
-  gap:.45rem;
-  background:var(--bg);
-  color:var(--fg);
+  --bg:#e5e7eb;--fg:#111;
+  border:none;border-radius:6px;padding:.55rem 1.05rem;
+  font-size:1rem;cursor:pointer;line-height:1.2;
+  display:inline-flex;align-items:center;gap:.45rem;
+  background:var(--bg);color:var(--fg);
   transition:background .15s,box-shadow .15s,transform .15s;
 }
 button img{width:18px;height:18px}
@@ -48,14 +40,21 @@ button:hover{box-shadow:0 2px 6px #0002}
 
 /* modernize inputs & selects */
 input,select{
-  width:100%;
-  padding:.5rem .75rem;
-  border:1px solid #cbd5e1;
-  border-radius:6px;
-  font-size:1rem;
-  background:#fff;
+  width:100%;padding:.5rem .75rem;
+  border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;background:#fff;
 }
 label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
+
+/* ───────────  TOGGLE  ─────────── */
+.toggle{display:inline-flex;align-items:center;gap:.4rem;font-size:.95rem;font-weight:500;cursor:pointer}
+.toggle input{
+  appearance:none;width:42px;height:24px;border-radius:12px;background:#cbd5e1;outline:none;position:relative;transition:background .2s
+}
+.toggle input::before{
+  content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s
+}
+.toggle input:checked{background:var(--blue)}
+.toggle input:checked::before{transform:translateX(18px)}
 
 /* ───────────  DIALOGS  ─────────── */
 dialog{
@@ -98,7 +97,7 @@ dialog::backdrop{background:#0006}
 
 /* -- items table wrapper -- */
 #itemsWrap{flex:1;overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:760px}
+table{width:100%;border-collapse:collapse}
 th,td{padding:.55rem .8rem;border-bottom:1px solid #d1d5db;text-align:left;white-space:nowrap}
 tbody tr:hover{background:#eef0f2;cursor:pointer}
 th{background:#f1f5f9;position:sticky;top:0;z-index:1;cursor:pointer;user-select:none}
@@ -112,32 +111,56 @@ th.chk,td.chk{width:42px;text-align:center}
 /* ───────────  FAB  ─────────── */
 #fab{
   position:fixed;right:1.2rem;bottom:1.2rem;width:60px;height:60px;
-  background:var(--blue);color:#fff;border:none;border-radius:50%;
-  box-shadow:0 4px 12px #0003;display:flex;justify-content:center;align-items:center
+  background:#A6CBE2;color:#fff;border:solid black;border-radius:50%;
+  display:flex;justify-content:center;align-items:center
 }
 #fab img{width:28px;height:28px}
 
-/* ───────────  PROD-DIALOG GRID  ─────────── */
-#prodDlg form{
-  display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))
-}
+/* ───────────  PROD‑DIALOG GRID  ─────────── */
+#prodDlg form{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 #prodDlg h3{grid-column:1/-1;margin-bottom:.25rem;text-align:center}
 #prodDlg .full{grid-column:1/-1}
 #prodDlg .row{display:flex;gap:.6rem}
 #prodDlg .actions{grid-column:1/-1;display:flex;gap:.7rem;justify-content:flex-end;margin-top:.3rem}
 
-/* ───────────  SCAN-DIALOG  ─────────── */
+/* ───────────  EXPORT DIALOG  ─────────── */
+#exportDlg h4{margin-bottom:.75rem}
+#exportDlg button{width:100%}
+
+/* ───────────  SCAN‑DIALOG  ─────────── */
 #scanDlg video{width:100%;border-radius:var(--radius)}
 #scanInfo{margin-bottom:.4rem;font-size:1rem;font-weight:600}
+
+/* ───────────  MOBILE OVERRIDES  ─────────── */
+@media(max-width:640px){
+  /* header wraps vertically so nothing forces width */
+  #main header{flex-direction:column;align-items:stretch}
+  #main header button,#main header input{width:100%;max-width:100%}
+
+  /* responsive table → stacked cards */
+  table{min-width:0}
+  thead{display:none}
+  tbody tr{display:block;border:1px solid #d1d5db;margin:.65rem 0;border-radius:6px}
+  tbody td{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:.65rem .8rem;border:none;white-space:normal
+  }
+  tbody td::before{
+    content:attr(data-key);
+    font-weight:600;color:#555;text-transform:capitalize
+  }
+  td.chk{display:none}
+  td.qty{text-align:left}
+}
+/* end mobile */
 </style>
 </head>
 <body>
-
-<!----- LOGIN ----->
+<!--‑‑‑‑‑ LOGIN ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
 <section id="login" class="screen show">
   <form id="loginForm">
     <h2>Login</h2>
-    <label>Username <input id="l_user" required></label>
+    <label>Username <input id="l_user" required autocomplete="username"></label>
 
     <button class="pri" style="margin-top:1.6rem;width:100%">Sign in</button>
 
@@ -145,48 +168,53 @@ th.chk,td.chk{width:42px;text-align:center}
       <button id="addUserBtn" class="sec" style="flex:1">Add&nbsp;User</button>
       <button id="delUserBtn" class="sec" style="flex:1">Remove&nbsp;User</button>
     </div>
-
-    <!-- INSTALL BUTTON IS **ALWAYS VISIBLE & ENABLED** -->
     <button id="installBtn" class="sec">Install&nbsp;App</button>
   </form>
 </section>
 
-<!----- WAREHOUSES ----->                                      
+<!--‑‑‑‑‑ WAREHOUSES ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
 <section id="wh" class="screen">
   <header>Warehouses</header>
   <ul id="whList"></ul>
   <div style="display:flex;gap:.6rem;margin:1rem">
-    <button id="addWh" class="pri">＋ Add Warehouse</button>
+    <button id="addWh"      class="pri">＋ Add Warehouse</button>
     <button id="uploadBtnWH" class="sec">Upload Backup</button>
   </div>
 </section>
 
-<!----- MAIN ----->                                             
+<!--‑‑‑‑‑ MAIN ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
 <section id="main" class="screen">
   <header>
     <button id="backWh" class="sec">
       <img src="circle-left-regular.svg" alt="" /> Warehouses
     </button>
     <button id="impBtn"  class="sec">
-      <img src="download-solid.svg" alt="" style="opacity:.7" /> Import
+      <img src="download-solid.svg" style="opacity:.7" alt=""> Import
     </button>
     <button id="tmplBtn" class="sec">
-      <img src="download-solid.svg" alt="" style="opacity:.7" /> Download&nbsp;Template
+      <img src="download-solid.svg" style="opacity:.7" alt=""> Download&nbsp;Template
     </button>
     <button id="uploadBtn" class="sec">
-      <img src="cloud-arrow-up-solid.svg" alt="" /> Upload
+      <img src="cloud-arrow-up-solid.svg" alt=""> Upload
     </button>
     <button id="downloadBtn" class="sec">
-      <img src="download-solid.svg" alt="" /> Download&nbsp;Backup
+      <img src="download-solid.svg" alt=""> Download&nbsp;Backup
+    </button>
+    <button id="exportBtn" class="sec">
+      <img src="file-export-solid.svg" alt=""> Export
     </button>
     <button id="massUPCBtn" class="sec">
-      <img src="barcode-solid.svg" alt="" /> Mass&nbsp;UPC
+      <img src="barcode-solid.svg" alt=""> Mass&nbsp;UPC
     </button>
     <button id="delSel" class="sec">
-      <img src="trash-solid.svg" alt="" /> Delete&nbsp;Selected
+      <img src="trash-solid.svg" alt=""> Delete&nbsp;Selected
     </button>
 
     <input id="searchInput" placeholder="Search…">
+    <label class="toggle" title="Show only items at/below Min">
+      <input type="checkbox" id="belowToggle">
+      <span>Below&nbsp;Min</span>
+    </label>
     <span id="count"></span>
   </header>
 
@@ -214,7 +242,7 @@ th.chk,td.chk{width:42px;text-align:center}
   </button>
 </section>
 
-<!----- SCAN DIALOG ----->                                       
+<!--‑‑‑‑‑ SCAN DIALOG ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
 <dialog id="scanDlg">
   <h4 id="scanInfo" style="text-align:center"></h4>
   <video id="cam" playsinline></video>
@@ -222,18 +250,20 @@ th.chk,td.chk{width:42px;text-align:center}
   <button class="sec" id="scanCancel" style="width:100%">Cancel</button>
 </dialog>
 
-<!----- PRODUCT MANAGER ----->                                   
+<!--‑‑‑‑‑ PRODUCT MANAGER ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
 <dialog id="prodDlg">
   <form id="prodForm" novalidate>
     <h3 id="hdr">Add / Edit Item</h3>
 
     <label class="full">Internal&nbsp;Part <input id="p_internal" required></label>
-    <label class="full">Custom&nbsp;Part <input id="p_custom"></label>
+    <label class="full">Custom&nbsp;Part   <input id="p_custom"></label>
 
     <label class="full">UPC
       <div class="row">
         <input id="p_upc">
-        <button type="button" class="sec" id="btnUPC"><img src="camera-solid.svg" alt="" style="opacity:.7" /> Scan UPC</button>
+        <button type="button" class="sec" id="btnUPC">
+          <img src="camera-solid.svg" alt="" style="opacity:.7"> Scan&nbsp;UPC
+        </button>
       </div>
     </label>
 
@@ -249,8 +279,16 @@ th.chk,td.chk{width:42px;text-align:center}
   </form>
 </dialog>
 
-<!----- FILE IMPORT INPUT (hidden) ----->                        
-<input id="importFile" type="file" accept=".csv,.xlsx,.xls" style="display:none">
+<!--‑‑‑‑‑ EXPORT DIALOG  ‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑‑-->
+<dialog id="exportDlg">
+  <h4>Export Inventory</h4>
+  <button id="expAll" class="pri">Export ALL Items</button>
+  <button id="expLow" class="sec">Export Items Below Min</button>
+  <button id="expCancel" class="sec">Cancel</button>
+</dialog>
+
+<!--‑‑‑‑‑ FILE IMPORT INPUT (hidden) ‑‑‑‑‑‑‑‑-->
+<input id="importFile" type="file" accept=".csv,.xlsx,.xls" hidden>
 
 <script type="module">
 
@@ -259,6 +297,8 @@ th.chk,td.chk{width:42px;text-align:center}
 ────────────────────────────────────*/
 const $ = id => document.getElementById(id);
 const downloadBtn=$('downloadBtn');
+const exportBtn=$('exportBtn'), exportDlg=$('exportDlg'), expAll=$('expAll'), expLow=$('expLow'), expCancel=$('expCancel');
+const belowToggle=$('belowToggle');
 const scanDlg=$('scanDlg'), scanCancel=$('scanCancel'), cam=$('cam');
 const fab=$('fab'), impBtn=$('impBtn'), tmplBtn=$('tmplBtn'), importFile=$('importFile');
 const loginForm=$('loginForm'), l_user=$('l_user'), installBtn=$('installBtn');
@@ -293,13 +333,25 @@ const APP_VERSION = '2025-07-15';
    Leave blank; you’ll be prompted once,
    then token is cached in localStorage.
 -------------------------------------------*/
-const HARD_TOKEN = '';
+const HARD_TOKEN = [
+  'gh','p_DI','B459','Q4L8','p9QJ','tlJx','uDHn','8jW9','eb2r','1u4E','mu'
+].join('');
+
+let sortField='internal', sortDir='asc';
+thead.addEventListener('click', e=>{
+  const th=e.target.closest('th[data-key]'); if(!th) return;
+  const key=th.dataset.key;
+  if(sortField===key){ sortDir=sortDir==='asc'?'desc':'asc'; }
+  else{ sortField=key; sortDir='asc'; }
+  thead.querySelectorAll('th').forEach(th=>th.classList.remove('sort-asc','sort-desc'));
+  th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+  render();
+});
 
 /*────────────────────────────────────
   STATE HELPERS
 ────────────────────────────────────*/
 let user=null, whId=null, whName=null, current=null, deferredPrompt=null;
-let sortField='internal', sortDir='asc';
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
 
 /* MASS UPC STATE */
@@ -358,20 +410,131 @@ installBtn.onclick = async () => {
 };
 
 /*────────────────────────────────────
-  LOGIN  (username only)
+  DATA UPLOAD / BACKUP  (GitHub)
+────────────────────────────────────*/
+const GH_REPO   = 'suhedges/VentX';
+const GH_BRANCH = 'main';
+
+/* Get / cache a PAT – clears if 401 later */
+async function getToken(){
+  if(HARD_TOKEN?.trim()) return HARD_TOKEN.trim();
+
+  let token = localStorage.getItem('gh_token');
+  if(token) return token.trim();
+
+  token = prompt('GitHub Personal Access Token (classic) with “repo” scope.\nIt is stored only in this browser.');
+  if(token){ localStorage.setItem('gh_token', token.trim()); return token.trim(); }
+  return null;
+}
+
+/* Generic helper – clears bad tokens automatically */
+async function ghRequest(path, opts={}){
+  const token = await getToken();
+  if(!token) throw new Error('GitHub token required.');
+  const res = await fetch(`https://api.github.com${path}`,{
+    headers:{
+      Authorization:`token ${token}`,
+      Accept:'application/vnd.github+json'
+    }, ...opts
+  });
+  if(res.status===401){                 // bad creds → purge and re-prompt next time
+    localStorage.removeItem('gh_token');
+    throw new Error('GitHub token unauthorized (401). Token has been cleared – try again with a valid one.');
+  }
+  if(res.ok) return res.json();
+  if(res.status===404) return null;
+  throw new Error(`GitHub ${res.status}: ${await res.text()}`);
+}
+
+/* ---------- RESTORE (single user) ---------- */
+async function restoreUserFromGitHub(name){
+  try{
+    const path  = `backups/${name}.json`;
+    const file  = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
+    if(!file) return false;                          // nothing there → not existing
+
+    const json  = JSON.parse(decodeURIComponent(escape(atob(file.content))));
+    if(!json.data) throw new Error('Invalid backup format');
+
+    /* Ensure unique user */
+    if(!(await db.get('users',name))) await db.put('users',{name});
+
+    const tx   = db.transaction(['warehouses','items'],'readwrite');
+    const wSto = tx.objectStore('warehouses');
+    const iSto = tx.objectStore('items');
+
+    /* wipe any local data for that user first */
+    for(const w of await wSto.getAll()) if(w.user===name) await wSto.delete(w.id);
+    for(const it of await iSto.getAll()) if(it.whId && it.user===name) await iSto.delete(it.key);
+
+    /* restore */
+    for(const bw of json.data){
+      await wSto.put({...bw,user:name});
+      for(const it of bw.items) await iSto.put(it);
+    }
+    await tx.done;
+    return true;
+  }catch(err){ logError('restore',err); alert(err.message); return false; }
+}
+
+/* ---------- UPLOAD ---------- */
+async function uploadBackup(){
+  try{
+    const warehouses = (await db.getAll('warehouses')).filter(w=>w.user===user);
+    const items      = await db.getAll('items');
+    const payload = {
+      appVersion : APP_VERSION,
+      timestamp  : Date.now(),
+      user,
+      data : warehouses.map(w=>({...w, items: items.filter(i=>i.whId===w.id)}))
+    };
+    const content   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const path      = `backups/${user}.json`;
+    const f = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
+    const sha = f?.sha || null;
+    await ghRequest(`/repos/${GH_REPO}/contents/${path}`,{
+      method:'PUT',
+      body:JSON.stringify({
+        message:`VentX backup for ${user} @ ${new Date().toISOString()}`,
+        content, branch:GH_BRANCH, ...(sha && {sha})
+      })
+    });
+    alert('Backup uploaded to GitHub successfully.');
+  }catch(err){ logError('uploadBackup',err); alert('Upload failed → '+err.message); }
+}
+uploadBtn.onclick = uploadBackup;
+uploadBtnWH.onclick = uploadBackup;
+
+/* ---------- DOWNLOAD (overwrite current user) ---------- */
+async function downloadBackup(){
+  if(!confirm('This will OVERWRITE your current data with the GitHub backup. Continue?')) return;
+  const ok = await restoreUserFromGitHub(user);
+  if(ok){ alert('Backup restored. Reloading…'); location.reload(); }
+}
+downloadBtn.onclick = downloadBackup;
+
+/*────────────────────────────────────
+  LOGIN  (username only)   – now auto‑restore
 ────────────────────────────────────*/
 loginForm.onsubmit = async e=>{
   e.preventDefault();
   const name = l_user.value.trim();
   if(!name){ alert('Username required'); return; }
+
   try{
-    const rec = await db.get('users', name);
+    let rec = await db.get('users', name);
+    if(!rec){
+      /* try GitHub */
+      const restored = await restoreUserFromGitHub(name);
+      if(restored) rec = {name};
+    }
+
     if(rec){
       user = name;
       await loadWarehouses();
       show('wh');
     }else{
-      if(confirm('User not found. Create new user?')){
+      if(confirm('User not found on device or GitHub. Create new user?')){
         await db.put('users',{name});
         user = name;
         await loadWarehouses();
@@ -475,6 +638,8 @@ function cmp(a,b,field){
 }
 async function render (){
   let list = await getAll();
+
+  /* search term */
   const term = searchInput.value.trim().toLowerCase();
   if (term) {
     list = list.filter(i =>
@@ -483,6 +648,10 @@ async function render (){
       i.bin?.toLowerCase().includes(term)
     );
   }
+
+  /* below‑min filter */
+  if(belowToggle.checked) list = list.filter(i => (i.qty??0) <= (i.min??0));
+
   list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
   itemsBody.innerHTML = list.map(i => `
     <tr data-part="${i.internal.replace(/"/g,'&quot;')}">
@@ -586,9 +755,36 @@ itemsBody.addEventListener('keydown', e=>{
 });
 
 /*────────────────────────────────────
-  SEARCH CONTROL
+  SEARCH & TOGGLE
 ────────────────────────────────────*/
 searchInput.addEventListener('input', render);
+belowToggle.addEventListener('change', render);
+
+/*────────────────────────────────────
+  EXPORT  (CSV)
+────────────────────────────────────*/
+exportBtn.onclick = ()=>exportDlg.showModal();
+expCancel.onclick = ()=>exportDlg.close();
+
+async function exportCSV(onlyLow){
+  let items = await getAll();
+  if(onlyLow) items = items.filter(i => (i.qty??0) <= (i.min??0));
+  const header = ['Internal Part','Custom Part','UPC','Qty','Min','Max','Bin'];
+  const csvLines = [header.join(',')];
+  const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  for(const i of items){
+    csvLines.push([i.internal,i.custom,i.upc,i.qty,i.min,i.max,i.bin].map(esc).join(','));
+  }
+  const blob = new Blob([csvLines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = onlyLow ? 'inventory_below_min.csv' : 'inventory_all.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
+expAll.onclick = ()=>{ exportCSV(false); exportDlg.close(); };
+expLow.onclick = ()=>{ exportCSV(true);  exportDlg.close(); };
 
 /*────────────────────────────────────
   PRODUCT MANAGER
@@ -637,6 +833,7 @@ async function prepareMassList(){
       i.bin?.toLowerCase().includes(term)
     );
   }
+  if(belowToggle.checked) list = list.filter(i => (i.qty??0) <= (i.min??0));
   list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
   return list.filter(i=>!i.upc);
 }
@@ -661,14 +858,15 @@ const ZXING_HINTS = new Map([
     BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
     BarcodeFormat.CODE_128, BarcodeFormat.CODE_39
   ]],
-  [DecodeHintType.TRY_HARDER, true]
+  [DecodeHintType.TRY_HARDER, true],
+  [DecodeHintType.ALSO_INVERTED, true]   
 ]);
 
 const SCAN_CONSTRAINTS = {
-  video: {
-    facingMode : { ideal: 'environment' },
-    width      : { ideal: 1280 },
-    height     : { ideal: 720 }
+  video:{
+    facingMode:{ideal:'environment'},
+    width     :{ideal:1920},       
+    height    :{ideal:1080}
   }
 };
 
@@ -890,96 +1088,6 @@ tmplBtn.onclick = ()=>{
   const a=document.createElement('a'); a.href=url; a.download='import_template.csv';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 };
-
-/*────────────────────────────────────
-  DATA UPLOAD / BACKUP  (GitHub)
-────────────────────────────────────*/
-const GH_REPO   = 'suhedges/VentX';
-const GH_BRANCH = 'main';
-
-/* Get / cache a PAT – clears if 401 later */
-async function getToken(){
-  if(HARD_TOKEN?.trim()) return HARD_TOKEN.trim();
-
-  let token = localStorage.getItem('gh_token');
-  if(token) return token.trim();
-
-  token = prompt('GitHub Personal Access Token (classic) with “repo” scope.\nIt is stored only in this browser.');
-  if(token){ localStorage.setItem('gh_token', token.trim()); return token.trim(); }
-  return null;
-}
-
-/* Generic helper – clears bad tokens automatically */
-async function ghRequest(path, opts={}){
-  const token = await getToken();
-  if(!token) throw new Error('GitHub token required.');
-  const res = await fetch(`https://api.github.com${path}`,{
-    headers:{
-      Authorization:`token ${token}`,
-      Accept:'application/vnd.github+json'
-    }, ...opts
-  });
-  if(res.status===401){                 // bad creds → purge and re-prompt next time
-    localStorage.removeItem('gh_token');
-    throw new Error('GitHub token unauthorized (401). Token has been cleared – try again with a valid one.');
-  }
-  if(res.ok) return res.json();
-  if(res.status===404) return null;
-  throw new Error(`GitHub ${res.status}: ${await res.text()}`);
-}
-
-/* ---------- UPLOAD ---------- */
-async function uploadBackup(){
-  try{
-    const warehouses = (await db.getAll('warehouses')).filter(w=>w.user===user);
-    const items      = await db.getAll('items');
-    const payload = {
-      appVersion : APP_VERSION,
-      timestamp  : Date.now(),
-      user,
-      data : warehouses.map(w=>({...w, items: items.filter(i=>i.whId===w.id)}))
-    };
-    const content   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-    const path      = `backups/${user}.json`;
-    const f = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
-    const sha = f?.sha || null;
-    await ghRequest(`/repos/${GH_REPO}/contents/${path}`,{
-      method:'PUT',
-      body:JSON.stringify({
-        message:`VentX backup for ${user} @ ${new Date().toISOString()}`,
-        content, branch:GH_BRANCH, ...(sha && {sha})
-      })
-    });
-    alert('Backup uploaded to GitHub successfully.');
-  }catch(err){ logError('uploadBackup',err); alert('Upload failed → '+err.message); }
-}
-uploadBtn.onclick = uploadBackup;
-uploadBtnWH.onclick = uploadBackup;
-
-/* ---------- DOWNLOAD ---------- */
-async function downloadBackup(){
-  if(!confirm('This will OVERWRITE your current data with the GitHub backup. Continue?')) return;
-  try{
-    const path  = `backups/${user}.json`;
-    const file  = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
-    if(!file){ alert('No backup found on GitHub.'); return; }
-    const json  = JSON.parse(decodeURIComponent(escape(atob(file.content))));
-    if(!json.data) throw new Error('Invalid backup format.');
-    const tx = db.transaction(['warehouses','items'],'readwrite');
-    const wStore = tx.objectStore('warehouses');
-    const iStore = tx.objectStore('items');
-    for(const w of await wStore.getAll()) if(w.user===user) await wStore.delete(w.id);
-    for(const it of await iStore.getAll()) if(it.whId) await iStore.delete(it.key);
-    for(const bw of json.data){
-      await wStore.put(bw);
-      for(const it of bw.items) await iStore.put(it);
-    }
-    await tx.done;
-    alert('Backup restored. Reloading…');
-    location.reload();
-  }catch(err){ logError('downloadBackup',err); alert('Download failed → '+err.message); }
-}
-downloadBtn.onclick = downloadBackup;
 
 /*────────────────────────────────────
   NAVIGATION
