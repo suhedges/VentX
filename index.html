@@ -277,7 +277,7 @@ const massUPCBtn=$('massUPCBtn'), scanInfo=$('scanInfo');
 /*────────────────────────────────────
   EXTERNAL LIBS
 ────────────────────────────────────*/
-import {openDB} from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
+import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
 import {
   BrowserMultiFormatReader,
   DecodeHintType,
@@ -659,89 +659,129 @@ const NATIVE_FORMATS = [
   'code_128','code_39','ean_13','ean_8','upc_a','upc_e','qr_code'
 ];
 
-const ZXING_HINTS = (() => {
-  const hints = new Map();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+const ZXING_HINTS = new Map([
+  [DecodeHintType.POSSIBLE_FORMATS, [
     BarcodeFormat.UPC_A,  BarcodeFormat.UPC_E,
     BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
     BarcodeFormat.CODE_128, BarcodeFormat.CODE_39
-  ]);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-  return hints;
-})();
+  ]],
+  [DecodeHintType.TRY_HARDER, true]
+]);
 
 const SCAN_CONSTRAINTS = {
   video: {
-    facingMode: {ideal: 'environment'},
-    width : {min: 640, ideal: 1280, max: 1920},
-    height: {min: 480, ideal: 720,  max: 1080}
+    facingMode : { ideal: 'environment' },
+    width      : { ideal: 1280 },
+    height     : { ideal: 720 }
   }
 };
 
 let reader, stream, captureInto = null;
 
-/* launchers stay the same */
-fab.onclick    = () => startScan();
-btnUPC.onclick = () => { captureInto = p_upc; prodDlg.close(); startScan(); };
+/* UI helpers */
+fab.onclick        = () => startScan();
+btnUPC.onclick     = () => { captureInto = p_upc; prodDlg.close(); startScan(); };
 scanCancel.onclick = () => { massMode = false; stopScan(); };
 
-async function startScan(){
+/* ––––––––– main entry ––––––––– */
+async function startScan () {
   scanDlg.showModal();
-  try{
+
+  try {
     stream = await navigator.mediaDevices.getUserMedia(SCAN_CONSTRAINTS);
     cam.srcObject = stream;
     await cam.play();
 
-    /* try to force continuous autofocus when available */
-    try{
-      const track = stream.getVideoTracks()[0];
-      const caps  = track.getCapabilities?.() || {};
-      if(caps.focusMode?.includes('continuous')){
-        await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
-      }
-    }catch{ /* capability not supported – ignore */ }
+    const track = stream.getVideoTracks()[0];
+    await applyAutoFocus(track);          // lens → continuous
+    maybeAddTorch(track);                 // show torch button if possible
+    enableTapFocus(track);                // click to refocus
 
-    'BarcodeDetector' in window ? startNativeDetector() : startZXingDetector();
-  }catch(err){
+    if ('BarcodeDetector' in window) {
+      startNativeDetector(track);
+    } else {
+      startZXingDetector();
+    }
+  } catch (err) {
     alert(err.message || err);
     stopScan();
     logError('scan', err);
   }
 }
 
-/* -------- Native Barcode Detection API -------- */
-function startNativeDetector(){
-  const detector = new BarcodeDetector({formats: NATIVE_FORMATS});
-  const imageCapture = new ImageCapture(stream.getVideoTracks()[0]);
-
-  const tick = async () => {
-    if(!scanDlg.open) return;            // dialog closed
-    try{
-      const bitmap   = await imageCapture.grabFrame();
-      const barcodes = await detector.detect(bitmap);
-      if(barcodes.length){
-        onCode(barcodes[0].rawValue);
-        return;
-      }
-    }catch{/* frame failed – keep looping */}
-    requestAnimationFrame(tick);
-  };
-  tick();
+/* ––––––––– autofocus helpers ––––––––– */
+async function applyAutoFocus (track) {
+  const caps = track.getCapabilities?.() || {};
+  if (caps.focusMode?.includes('continuous')) {
+    await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+  }
 }
 
-/* -------- ZXing fallback -------- */
-function startZXingDetector(){
-  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200); // 200 ms between scans
-  reader.decodeFromConstraints(SCAN_CONSTRAINTS, cam, (res, err) => {
-    if(res) onCode(res.getText());
+function enableTapFocus (track) {
+  const caps = track.getCapabilities?.() || {};
+  if (!caps.pointsOfInterest) return;
+
+  cam.addEventListener('click', async e => {
+    const r = cam.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top)  / r.height;
+    try {
+      await track.applyConstraints({ advanced: [{ pointsOfInterest: [{ x, y }] }] });
+    } catch { /* ignore */ }
+  }, { once: true }); // re-add after each restart if you like
+}
+
+function maybeAddTorch (track) {
+  const caps = track.getCapabilities?.() || {};
+  if (!caps.torch) return;
+  const btn = document.createElement('button');
+  btn.id = 'torchBtn';
+  btn.textContent = '💡';
+  btn.className = 'sec';
+  btn.style.position = 'absolute';
+  btn.style.top = '1rem';
+  btn.style.right = '1rem';
+  scanDlg.appendChild(btn);
+  btn.onclick = async () => {
+    const on = !(btn.dataset.on === '1');
+    await track.applyConstraints({ advanced: [{ torch: on }] });
+    btn.dataset.on = on ? '1' : '0';
+  };
+}
+
+/* ––––––––– native detector ––––––––– */
+function startNativeDetector (track) {
+  const detector = new BarcodeDetector({
+    formats: ['upc_a', 'upc_e', 'ean_13', 'ean_8', 'code_128', 'code_39']
+  });
+  const capture = new ImageCapture(track);
+
+  const loop = async () => {
+    if (!scanDlg.open) return;          // dialog closed
+    try {
+      const bmp = await capture.grabFrame();
+      const codes = await detector.detect(bmp);
+      if (codes.length) return onCode(codes[0].rawValue);
+    } catch { /* keep looping */ }
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+/* ––––––––– ZXing fallback ––––––––– */
+function startZXingDetector () {
+  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200); // 200 ms throttle
+  reader.decodeFromConstraints(SCAN_CONSTRAINTS, cam, (result, err) => {
+    if (result) onCode(result.getText());
   });
 }
 
-/* -------- shared helpers -------- */
-function stopScan(){
+/* ––––––––– common helpers ––––––––– */
+function stopScan () {
   reader?.reset?.();
-  stream?.getTracks().forEach(t=>t.stop());
+  stream?.getTracks().forEach(t => t.stop());
   scanDlg.close();
+  document.getElementById('torchBtn')?.remove();
 }
 /*────────────────────────────────────
   IMPORT CSV / XLSX
