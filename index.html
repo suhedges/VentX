@@ -133,7 +133,7 @@ th.chk,td.chk{width:42px;text-align:center}
 </head>
 <body>
 
-<!----- LOGIN ----->               <!-- ① INSTALL BUTTON VISIBLE -->
+<!----- LOGIN ----->
 <section id="login" class="screen show">
   <form id="loginForm">
     <h2>Login</h2>
@@ -146,7 +146,8 @@ th.chk,td.chk{width:42px;text-align:center}
       <button id="delUserBtn" class="sec" style="flex:1">Remove&nbsp;User</button>
     </div>
 
-    <button id="installBtn" class="sec" disabled>Install&nbsp;App</button>
+    <!-- INSTALL BUTTON IS **ALWAYS VISIBLE & ENABLED** -->
+    <button id="installBtn" class="sec">Install&nbsp;App</button>
   </form>
 </section>
 
@@ -178,12 +179,9 @@ th.chk,td.chk{width:42px;text-align:center}
     <button id="downloadBtn" class="sec">
       <img src="download-solid.svg" alt="" /> Download&nbsp;Backup
     </button>
-    <!-- NEW MASS UPC BUTTON -->
     <button id="massUPCBtn" class="sec">
       <img src="barcode-solid.svg" alt="" /> Mass&nbsp;UPC
     </button>
-
-    <!-- DELETE-SELECTED BUTTON (appears when rows are ticked) -->
     <button id="delSel" class="sec">
       <img src="trash-solid.svg" alt="" /> Delete&nbsp;Selected
     </button>
@@ -192,7 +190,6 @@ th.chk,td.chk{width:42px;text-align:center}
     <span id="count"></span>
   </header>
 
-  <!-- ② SPREADSHEET-STYLE TABLE -->
   <div id="itemsWrap">
     <table id="itemsTable">
       <thead>
@@ -275,11 +272,10 @@ const backWh=$('backWh'), itemsBody=$('itemsBody'), count=$('count');
 const searchInput=$('searchInput'), uploadBtn=$('uploadBtn'), uploadBtnWH=$('uploadBtnWH');
 const thead = $('itemsTable').querySelector('thead');
 const selectAll=$('selectAll'), delSel=$('delSel');
-/* NEW REFERENCES */
 const massUPCBtn=$('massUPCBtn'), scanInfo=$('scanInfo');
 
 /*────────────────────────────────────
-  EXTERNAL LIBS (lazy-loaded where possible)
+  EXTERNAL LIBS
 ────────────────────────────────────*/
 import { openDB } from 'https://cdn.jsdelivr.net/npm/idb@8/+esm';
 import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library@0.20.0';
@@ -289,8 +285,11 @@ import { BrowserMultiFormatReader } from 'https://cdn.skypack.dev/@zxing/library
 ────────────────────────────────────*/
 const APP_VERSION = '2025-07-15';
 
-const HARD_TOKEN = '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';  
-
+/* -------------- PAT HANDLING --------------
+   Leave blank; you’ll be prompted once,
+   then token is cached in localStorage.
+-------------------------------------------*/
+const HARD_TOKEN = '';
 
 /*────────────────────────────────────
   STATE HELPERS
@@ -320,7 +319,7 @@ const db = await openDB('inventory', 4, {
       db.createObjectStore('logs',{keyPath:'ts'});
   }
 });
-await navigator.storage?.persist?.();          // ask for persistent quota
+await navigator.storage?.persist?.();
 
 /* seed demo users */
 for(const u of ['US1','US2'])
@@ -334,24 +333,24 @@ async function logError(type,msg){
 /*────────────────────────────────────
   INSTALL (PWA)
 ────────────────────────────────────*/
-installBtn.disabled = true;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
-  deferredPrompt = e;
-  installBtn.disabled = false;
+  deferredPrompt = e;          // save the event
 });
 
 installBtn.onclick = async () => {
-  if (!deferredPrompt) {
-    alert('If your browser supports it, use “Add to Home Screen” from the menu to install.');
-    return;
+  /* If event exists → real install flow, else fallback help */
+  if (deferredPrompt) {
+    try{
+      deferredPrompt.prompt();
+      const res = await deferredPrompt.userChoice;
+      if(res.outcome!=='accepted')
+        alert('App install was dismissed – you can install later from your browser menu.');
+      deferredPrompt = null;
+    }catch(err){ logError('install',err); }
+  } else {
+    alert('Use your browser’s “Add to Home Screen / Install App” option.');
   }
-  try {
-    deferredPrompt.prompt();
-    const res = await deferredPrompt.userChoice;
-    if (res.outcome === 'accepted') installBtn.disabled = true;
-    deferredPrompt = null;
-  } catch (err) { logError('install', err); }
 };
 
 /*────────────────────────────────────
@@ -394,9 +393,7 @@ delUserBtn.onclick = async ()=>{
   if(!uname) return;
   if(!(await db.get('users',uname))){ alert('User does not exist'); return; }
   if(!confirm(`Delete user "${uname}" and all associated data? This cannot be undone.`)) return;
-  /* delete user record */
   await db.delete('users',uname);
-  /* delete their warehouses & items */
   const whs = await db.getAll('warehouses');
   for(const w of whs.filter(w=>w.user===uname)){
     await db.delete('warehouses',w.id);
@@ -432,7 +429,6 @@ addWh.onclick=async()=>{
   openWh(id,n);
 };
 
-/* delete warehouse & items */
 window.delWh = async id=>{
   if(!confirm('Delete this warehouse and ALL its items?')) return;
   const tx = db.transaction(['warehouses','items'],'readwrite');
@@ -465,7 +461,7 @@ const delItem   = async partId=>{
 const byUPC     = u => db.getAll('items').then(a=>a.find(i=>i.whId===whId && i.upc===u));
 
 /*────────────────────────────────────
-  RENDER LIST  (filter + sort)
+  RENDER LIST
 ────────────────────────────────────*/
 function cmp(a,b,field){
   const numFields=['min','max','qty'];
@@ -473,11 +469,8 @@ function cmp(a,b,field){
   return numFields.includes(field) ? (av-bv) :
     String(av).localeCompare(String(bv),undefined,{numeric:true});
 }
-
 async function render (){
   let list = await getAll();
-
-  /* ── Filter ────────────────────────────────── */
   const term = searchInput.value.trim().toLowerCase();
   if (term) {
     list = list.filter(i =>
@@ -486,11 +479,7 @@ async function render (){
       i.bin?.toLowerCase().includes(term)
     );
   }
-
-  /* ── Sort ──────────────────────────────────── */
   list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
-
-  /* ── Paint ─────────────────────────────────── */
   itemsBody.innerHTML = list.map(i => `
     <tr data-part="${i.internal.replace(/"/g,'&quot;')}">
       <td class="chk"><input type="checkbox" class="selRow"></td>
@@ -503,10 +492,7 @@ async function render (){
       <td data-key="bin">${i.bin||''}</td>
       <td class="chk"><img src="trash-solid.svg" class="row-del" title="Delete"></td>
     </tr>`).join('');
-
   count.textContent = `${whName} \u00B7 ${list.length} items`;
-
-  /* restore selection after re-render */
   for(const tr of itemsBody.querySelectorAll('tr')){
     const part=tr.dataset.part;
     tr.querySelector('.selRow').checked=selectedParts.has(part);
@@ -639,7 +625,6 @@ closeProd.onclick = ()=>prodDlg.close();
 ────────────────────────────────────*/
 async function prepareMassList(){
   let list = await getAll();
-  /* apply current filter */
   const term = searchInput.value.trim().toLowerCase();
   if (term) {
     list = list.filter(i =>
@@ -648,31 +633,25 @@ async function prepareMassList(){
       i.bin?.toLowerCase().includes(term)
     );
   }
-  /* sort according to table */
   list.sort((a,b)=> cmp(a,b,sortField) * (sortDir==='asc'?1:-1));
-  /* only those without UPC */
   return list.filter(i=>!i.upc);
 }
-
 async function startMassUPC(){
   massList = await prepareMassList();
   if(!massList.length){ alert('All visible items already have UPCs'); return; }
   massMode = true; massIndex = 0; showNextMassItem(); startScan();
 }
-
 function showNextMassItem(){
   if(massIndex>=massList.length){ scanInfo.textContent=''; return; }
   const it = massList[massIndex];
   scanInfo.textContent = `${it.internal}  |  BIN: ${it.bin||''}`;
 }
-
 massUPCBtn.onclick = startMassUPC;
 
 /*────────────────────────────────────
-  BARCODE SCANNER (ZXing) – enhanced
+  BARCODE SCANNER (ZXing)
 ────────────────────────────────────*/
 let reader, stream, captureInto=null;
-
 fab.onclick     = ()=>startScan(null);
 btnUPC.onclick  = ()=>{ captureInto=p_upc; prodDlg.close(); startScan(); };
 scanCancel.onclick = ()=>{ massMode=false; stopScan(); };
@@ -702,7 +681,6 @@ async function onCode(code){
     else{ massMode=false; alert('Mass UPC scanning complete'); render(); }
     return;
   }
-
   stopScan();
   if(captureInto){
     captureInto.value=code; captureInto=null;
@@ -729,9 +707,9 @@ importFile.onchange = async e=>{
       const buf=await file.arrayBuffer();
       const XLSX=(await import('https://cdn.jsdelivr.net/npm/xlsx@0.20.3/+esm')).default;
       const wb=XLSX.read(buf,{type:'array'});
-      rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      rows=XLSX.utils.sheet_to_json(ws);
     }
-
     for(const r of rows){
       const internal=String(r['Internal Part']||r.internal||r.Internal||'').trim();
       if(!internal) continue;
@@ -764,19 +742,19 @@ tmplBtn.onclick = ()=>{
 const GH_REPO   = 'suhedges/VentX';
 const GH_BRANCH = 'main';
 
+/* Get / cache a PAT – clears if 401 later */
 async function getToken(){
-  /* use constant if it was replaced by the user */
-  if (HARD_TOKEN && HARD_TOKEN !== 'GITHUBTOKEN') return HARD_TOKEN.trim();
+  if(HARD_TOKEN?.trim()) return HARD_TOKEN.trim();
 
-  /* fallback to cached value / prompt */
   let token = localStorage.getItem('gh_token');
-  if(!token){
-    token = prompt('GitHub Personal Access Token (scope → repo)\nThis is stored only in your browser.');
-    if(token) localStorage.setItem('gh_token', token.trim());
-  }
-  return token?.trim();
+  if(token) return token.trim();
+
+  token = prompt('GitHub Personal Access Token (classic) with “repo” scope.\nIt is stored only in this browser.');
+  if(token){ localStorage.setItem('gh_token', token.trim()); return token.trim(); }
+  return null;
 }
 
+/* Generic helper – clears bad tokens automatically */
 async function ghRequest(path, opts={}){
   const token = await getToken();
   if(!token) throw new Error('GitHub token required.');
@@ -786,10 +764,13 @@ async function ghRequest(path, opts={}){
       Accept:'application/vnd.github+json'
     }, ...opts
   });
+  if(res.status===401){                 // bad creds → purge and re-prompt next time
+    localStorage.removeItem('gh_token');
+    throw new Error('GitHub token unauthorized (401). Token has been cleared – try again with a valid one.');
+  }
   if(res.ok) return res.json();
-  if(res.status===404) return null;   // silent "not found"
-  const txt = await res.text();
-  throw new Error(`GitHub ${res.status}: ${txt}`);
+  if(res.status===404) return null;
+  throw new Error(`GitHub ${res.status}: ${await res.text()}`);
 }
 
 /* ---------- UPLOAD ---------- */
@@ -805,11 +786,8 @@ async function uploadBackup(){
     };
     const content   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
     const path      = `backups/${user}.json`;
-
-    /* check if file already exists (to supply SHA for update) */
     const f = await ghRequest(`/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`);
     const sha = f?.sha || null;
-
     await ghRequest(`/repos/${GH_REPO}/contents/${path}`,{
       method:'PUT',
       body:JSON.stringify({
@@ -832,23 +810,18 @@ async function downloadBackup(){
     if(!file){ alert('No backup found on GitHub.'); return; }
     const json  = JSON.parse(decodeURIComponent(escape(atob(file.content))));
     if(!json.data) throw new Error('Invalid backup format.');
-
-    /* wipe old user data then repopulate */
     const tx = db.transaction(['warehouses','items'],'readwrite');
     const wStore = tx.objectStore('warehouses');
     const iStore = tx.objectStore('items');
-
     for(const w of await wStore.getAll()) if(w.user===user) await wStore.delete(w.id);
     for(const it of await iStore.getAll()) if(it.whId) await iStore.delete(it.key);
-
     for(const bw of json.data){
       await wStore.put(bw);
       for(const it of bw.items) await iStore.put(it);
     }
     await tx.done;
-
     alert('Backup restored. Reloading…');
-    location.reload();       // full UI refresh
+    location.reload();
   }catch(err){ logError('downloadBackup',err); alert('Download failed → '+err.message); }
 }
 downloadBtn.onclick = downloadBackup;
