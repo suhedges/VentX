@@ -133,14 +133,29 @@ th.chk,td.chk{width:42px;text-align:center}
 }
 #fab img{width:28px;height:28px}
 
+#scanDlg{
+  /* keep existing styles … */
+  overflow:hidden;              
+  max-height:90vh;            
+}
+#scanDlg video{
+  width:100%;                
+  height:auto;          
+  max-height:60vh;         
+  object-fit:contain;            
+  display:block;                
+  border-radius:var(--radius);    
+}
+
 /* ───────────  MOBILE OVERRIDES  ─────────── */
 @media(max-width:640px){
   /* header wraps vertically so nothing forces width */
   #main header{flex-direction:column;align-items:stretch}
   #main header > *{width:100%;max-width:100%}
-
+  #menu{left:20%;}
   /* action buttons hidden on small – hamburger stays */
-  #menuToggle{align-self:flex-end}
+  #menuToggle{align-self:flex-end;width:100%} 
+  #searchInput{margin:0 auto}
 
   /* sort‑by dropdown */
   .mobile-sort{display:block;margin:.4rem 0}
@@ -188,7 +203,7 @@ th.chk,td.chk{width:42px;text-align:center}
 <section id="wh" class="screen">
   <header>Warehouses</header>
   <ul id="whList"></ul>
-  <div style="display:flex;gap:.6rem;margin:1rem">
+  <div style="display:flex;gap:.6rem;margin:1rem;justify-content:center;">
     <button id="addWh"      class="pri">＋ Add Warehouse</button>
     <button id="uploadBtnWH" class="sec">Upload Backup</button>
     <button id="downloadBtnWH" class="sec">Download Backup</button>
@@ -659,7 +674,6 @@ async function loadWarehouses(){
         <li data-wh="${w.id}">
           <span>${w.name}</span>
           <div class="actions">
-            <button class="pri" onclick="openWh(${w.id},'${w.name.replace(/'/g,'&#39;')}')">Open</button>
             <button class="sec" onclick="delWh(${w.id})" title="Delete"><img src="trash-solid.svg" alt=""></button>
           </div>
         </li>`).join('')
@@ -935,150 +949,199 @@ const ZXING_HINTS = new Map([
     BarcodeFormat.EAN_13, BarcodeFormat.EAN_8,
     BarcodeFormat.CODE_128, BarcodeFormat.CODE_39
   ]],
-  [DecodeHintType.TRY_HARDER, true],
-  [DecodeHintType.ALSO_INVERTED, true]   
+  [DecodeHintType.TRY_HARDER,   true],   // spend extra effort per frame
+  [DecodeHintType.ALSO_INVERTED,true],   // pick up white‑on‑black
+  [DecodeHintType.ASSUME_GS1,  true]     // common retail prefixes
 ]);
 
+/* Ask for the highest profile the device can give us.  
+   Browsers will silently fall back if it’s not available. */
 const SCAN_CONSTRAINTS = {
   video:{
     facingMode:{ideal:'environment'},
-    width     :{ideal:1920},       
-    height    :{ideal:1080}
+    width     :{ideal:2560},   /* ≈ 2.5 MP → crisp codes */
+    height    :{ideal:1440},
+    frameRate :{ideal:30, max:60}
   }
 };
 
+/* debounce / validation state */
+let lastCode      = '';
+let stableCount   = 0;
+let lastScanTs    = 0;
 let reader, stream, captureInto = null;
-let autoFocusInterval = null;       // ★ autofocus
-
+let autoFocusInterval = null;
 /* UI helpers */
 fab.onclick        = () => startScan();
 btnUPC.onclick     = () => { captureInto = p_upc; prodDlg.close(); startScan(); };
 scanCancel.onclick = () => { massMode = false; stopScan(); };
 
+/*────────────────────────────────────
+  BARCODE VALIDATION & DEBOUNCE
+────────────────────────────────────*/
+function validateBarcode(num){
+  const len = num.length;
+  if(len===12) return validateUpcA(num);
+  if(len===13) return validateEan13(num);
+  if(len===8)  return validateEan8(num);
+  /* Unknown length – accept but still need 2 stable reads */
+  return true;
+}
+function validateUpcA(s){
+  let sum=0;
+  for(let i=0;i<11;i++) sum += (i%2?1:3)*+s[i];
+  return ((10-(sum%10))%10) === +s[11];
+}
+function validateEan13(s){
+  let sum=0;
+  for(let i=0;i<12;i++) sum += (i%2?3:1)*+s[i];
+  return ((10-(sum%10))%10) === +s[12];
+}
+function validateEan8(s){
+  let sum=0;
+  for(let i=0;i<7;i++) sum += (i%2?3:1)*+s[i];
+  return ((10-(sum%10))%10) === +s[7];
+}
+
+/* Returns the code once it is (a) valid and (b) identical in ≥2
+   consecutive frames at least 400 ms apart.  Otherwise returns false. */
+function handleRawCode(raw){
+  const code = raw.trim();
+  const now  = Date.now();
+
+  /* basic sanity filter – only 8‑14 digits allowed */
+  if(!/^\d{8,14}$/.test(code))      return false;
+  if(!validateBarcode(code))        return false;
+  if(code===lastCode && (now-lastScanTs)<400) return false;  // too soon
+
+  if(code===lastCode) stableCount++; else{ lastCode=code; stableCount=1; }
+  lastScanTs = now;
+
+  return stableCount>=2 ? code : false;
+}
+
 /* ––––––––– main entry ––––––––– */
 async function startScan () {
-  scanDlg.showModal();
+  /* reset stability filter each time we open the scanner */
+  lastCode = ''; stableCount = 0;
 
-  try {
+  scanDlg.showModal();
+  try{
     stream = await navigator.mediaDevices.getUserMedia(SCAN_CONSTRAINTS);
     cam.srcObject = stream;
     await cam.play();
 
     const track = stream.getVideoTracks()[0];
-    await applyAutoFocus(track);          // ★ lens → continuous / single‑shot loop
-    maybeAddTorch(track);                 // show torch button if possible
-    enableTapFocus(track);                // click to refocus
+    await applyAutoFocus(track);      // ★ see next block
+    maybeAddTorch(track);
+    enableTapFocus(track);
 
-    if ('BarcodeDetector' in window) {
+    if('BarcodeDetector' in window){
       startNativeDetector(track);
-    } else {
+    }else{
       startZXingDetector();
     }
-  } catch (err) {
-    alert(err.message || err);
+  }catch(err){
+    alert(err.message||err);
     stopScan();
-    logError('scan', err);
+    logError('scan',err);
   }
 }
 
-/* ––––––––– autofocus helpers ––––––––– */
-async function applyAutoFocus (track) {
-  const caps = track.getCapabilities?.() || {};
-  const modes = caps.focusMode || [];
-  try {
-    if (modes.includes('continuous')) {
-      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-    } else if (modes.includes('single-shot')) {
-      await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
-    }
+/*────────────────────────────────────
+  CAMERA QUALITY HELPERS
+────────────────────────────────────*/
+async function applyAutoFocus(track){
+  const caps = track.getCapabilities?.()||{};
+  const modes= caps.focusMode||[];
+  try{
+    if(modes.includes('continuous'))
+      await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+    else if(modes.includes('single-shot'))
+      await track.applyConstraints({advanced:[{focusMode:'single-shot'}]});
 
-    /* If focus distance is supported, bias toward the nearest end for close‑ups */
-    if (caps.focusDistance && typeof caps.focusDistance.min === 'number') {
-      await track.applyConstraints({
-        advanced: [{ focusDistance: caps.focusDistance.min }]
-      });
+    /* bias lens toward macro distance if supported */
+    if(caps.focusDistance && typeof caps.focusDistance.min==='number'){
+      await track.applyConstraints({advanced:[{focusDistance:caps.focusDistance.min}]});
     }
-  } catch {/* ignore unsupported */}
-  
-  /* ★ Kick single‑shot every 1.5 s (many phones need this nudge) */
-  if (modes.includes('single-shot')) {
-    autoFocusInterval = setInterval(async () => {
-      try {
-        await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
-      } catch { /* ignore */ }
-    }, 1500);
+  }catch{/* ignore */ }
+
+  /* Kick “single‑shot” every 1.5 s – many Android cameras need the nudge */
+  if(modes.includes('single-shot')){
+    autoFocusInterval = setInterval(async()=>{
+      try{ await track.applyConstraints({advanced:[{focusMode:'single-shot'}]}); }catch{}
+    },1500);
   }
 }
 
-function enableTapFocus (track) {
-  const caps = track.getCapabilities?.() || {};
-  if (!caps.pointsOfInterest) return;
-
-  cam.onclick = async e => {
-    const r = cam.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width;
-    const y = (e.clientY - r.top)  / r.height;
-    try {
-      await track.applyConstraints({
-        advanced: [
-          { pointsOfInterest: [{ x, y }] },
-          { focusMode: caps.focusMode?.includes('single-shot') ? 'single-shot' : 'continuous' }
-        ]
-      });
-    } catch { /* ignore */ }
+function enableTapFocus(track){
+  const caps=track.getCapabilities?.()||{};
+  if(!caps.pointsOfInterest) return;
+  cam.onclick = async e=>{
+    const r=cam.getBoundingClientRect();
+    const pt={x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
+    try{
+      await track.applyConstraints({advanced:[
+        {pointsOfInterest:[pt]},
+        {focusMode:caps.focusMode?.includes('single-shot')?'single-shot':'continuous'}
+      ]});
+    }catch{}
   };
 }
 
-function maybeAddTorch (track) {
-  const caps = track.getCapabilities?.() || {};
-  if (!caps.torch) return;
-  const btn = document.createElement('button');
-  btn.id = 'torchBtn';
-  btn.textContent = '💡';
-  btn.className = 'sec';
-  btn.style.position = 'absolute';
-  btn.style.top = '1rem';
-  btn.style.right = '1rem';
+function maybeAddTorch(track){
+  const caps=track.getCapabilities?.()||{};
+  if(!caps.torch) return;
+  const btn=document.createElement('button');
+  btn.id='torchBtn'; btn.textContent='💡'; btn.className='sec';
+  btn.style.cssText='position:absolute;top:1rem;right:1rem';
   scanDlg.appendChild(btn);
-  btn.onclick = async () => {
-    const on = !(btn.dataset.on === '1');
-    await track.applyConstraints({ advanced: [{ torch: on }] });
-    btn.dataset.on = on ? '1' : '0';
+  btn.onclick = async()=>{
+    const on = !(btn.dataset.on==='1');
+    await track.applyConstraints({advanced:[{torch:on}]});
+    btn.dataset.on = on?'1':'0';
   };
 }
 
 /* ––––––––– native detector ––––––––– */
-function startNativeDetector (track) {
+function startNativeDetector(track){
   const detector = new BarcodeDetector({
-    formats: ['upc_a', 'upc_e', 'ean_13', 'ean_8', 'code_128', 'code_39']
+    formats:['upc_a','upc_e','ean_13','ean_8','code_128','code_39']
   });
   const capture = new ImageCapture(track);
 
-  const loop = async () => {
-    if (!scanDlg.open) return;
-    try {
-      const bmp = await capture.grabFrame();
+  const loop = async ()=>{
+    if(!scanDlg.open) return;
+    try{
+      const bmp   = await capture.grabFrame();
       const codes = await detector.detect(bmp);
-      if (codes.length) return onCode(codes[0].rawValue);
-    } catch { /* keep looping */ }
+      if(codes.length){
+        const ok = handleRawCode(codes[0].rawValue);
+        if(ok) return onCode(ok);
+      }
+    }catch{/* keep looping */}
     requestAnimationFrame(loop);
   };
   loop();
 }
 
 /* ––––––––– ZXing fallback ––––––––– */
-function startZXingDetector () {
-  reader = new BrowserMultiFormatReader(ZXING_HINTS, 200);
-  reader.decodeFromConstraints(SCAN_CONSTRAINTS, cam, (result, err) => {
-    if (result) onCode(result.getText());
+function startZXingDetector(){
+  reader = new BrowserMultiFormatReader(ZXING_HINTS,200);
+  reader.decodeFromConstraints(SCAN_CONSTRAINTS,cam,(result,err)=>{
+    if(result){
+      const ok = handleRawCode(result.getText());
+      if(ok) onCode(ok);
+    }
   });
 }
 
 /* ––––––––– common helpers ––––––––– */
-function stopScan () {
+function stopScan(){
   reader?.reset?.();
-  stream?.getTracks().forEach(t => t.stop());
-  clearInterval(autoFocusInterval); autoFocusInterval=null;   // ★ clear loop
+  stream?.getTracks().forEach(t=>t.stop());
+  clearInterval(autoFocusInterval); autoFocusInterval=null;
+  lastCode=''; stableCount=0;
   scanDlg.close();
   document.getElementById('torchBtn')?.remove();
 }
