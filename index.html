@@ -11,50 +11,84 @@
 <style>
 /* ───────────  THEME  ─────────── */
 :root{
-  --blue:#2563eb;
-  --blue-hover:#1e4fc0;
-  --gray:#1f2937;
-  --light:#f8fafc;
+  /* --- NEW core palette --- */
+  --bg-dark:#0f172a;            /* page background                */
+  --surface-dark:#1f2937;       /* cards, dialogs, table rows …   */
+
+  /* --- accent palette (kept the same names) --- */
+  --blue:#3b82f6;
+  --blue-hover:#2563eb;
+
+  /* --- neutrals & text --- */
+  --gray:var(--surface-dark);   /* was #1f2937                     */
+  --light:var(--bg-dark);       /* replaces the old light gray     */
+  --border-dark:#334155;        /* slate-700                       */
+  --text:#f8fafc;               /* very light text                 */
+
   --radius:8px;
   font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body,html{height:100%}
-body{display:flex;flex-direction:column;background:var(--light);color:#111}
+body{
+  display:flex;flex-direction:column;
+  background:var(--bg-dark);
+  color:var(--text)
+}
 
 /* ───────────  SHARED  ─────────── */
 button{
-  --bg:#e5e7eb;--fg:#111;
+  --bg:#374151;        /* default button background (slate-700) */
+  --fg:var(--text);
   border:none;border-radius:6px;padding:.55rem 1.05rem;
   font-size:1rem;cursor:pointer;line-height:1.2;
   display:inline-flex;align-items:center;gap:.45rem;
   background:var(--bg);color:var(--fg);justify-content:center;
-  transition:background .15s,box-shadow .15s,transform .15s;
+  transition:
+    background .2s ease,
+    box-shadow .25s ease,
+    transform .18s ease;
+  position:relative;overflow:hidden              /* for ripple */
 }
-button img{width:18px;height:18px}
-button:active{transform:translateY(1px)}
-button:hover{box-shadow:0 2px 6px #0002}
+button img{width:18px;height:18px;filter:invert(1)}
+button:active{transform:translateY(1px) scale(.98)}
+button:hover{box-shadow:0 6px 18px #0006;transform:translateY(-2px) scale(1.03)}
+
+/* ripple animation */
+button::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at center, #ffffff44 10%, transparent 60%);
+  opacity:0;transform:scale(0);transition:opacity .6s,transform .6s
+}
+button:active::after{opacity:.35;transform:scale(2.5);transition:0s}
+
 .pri{--bg:var(--blue);--fg:#fff}
 .pri:hover{background:var(--blue-hover)}
-.sec:hover{background:#d1d5db}
+.sec:hover{background:#475569}
 
 /* modernize inputs & selects */
 input,select{
   width:100%;padding:.5rem .75rem;
-  border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;background:#fff;
+  border:1px solid var(--border-dark);border-radius:6px;font-size:1rem;
+  background:var(--surface-dark);color:var(--text)
 }
 label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
 
-/* username always upper‑case */
+/* username always upper-case */
 #l_user{text-transform:uppercase}
 
 /* ───────────  TOGGLE  ─────────── */
-.toggle{display:inline-flex;align-items:center;gap:.4rem;font-size:.95rem;font-weight:500;cursor:pointer}
+.toggle{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.95rem;font-weight:500;cursor:pointer
+}
 .toggle input{
-  appearance:none;width:42px;height:24px;border-radius:12px;background:#cbd5e1;outline:none;position:relative;transition:background .2s
+  appearance:none;width:42px;height:24px;border-radius:12px;
+  background:#475569;outline:none;position:relative;transition:background .2s
 }
 .toggle input::before{
-  content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s
+  content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;
+  border-radius:50%;background:#fff;transition:transform .2s
 }
 .toggle input:checked{background:var(--blue)}
 .toggle input:checked::before{transform:translateX(18px)}
@@ -63,9 +97,10 @@ label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
 dialog{
   border:none;border-radius:var(--radius);padding:1rem;width:92%;max-width:480px;
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:#fff;box-shadow:0 6px 24px #0003
+  background:var(--surface-dark);color:var(--text);
+  box-shadow:0 6px 24px #000a
 }
-dialog::backdrop{background:#0006}
+dialog::backdrop{background:#0008}
 
 /* ───────────  SCREENS  ─────────── */
 .screen{flex:1;display:none;flex-direction:column}
@@ -73,109 +108,114 @@ dialog::backdrop{background:#0006}
 
 /* ───────────  LOGIN  ─────────── */
 #login form{
-  margin:auto;width:90%;max-width:380px;border:1px solid #d1d5db;
-  padding:2rem;border-radius:var(--radius);background:#fff;box-shadow:0 4px 18px #0001
+  margin:auto;width:90%;max-width:380px;border:1px solid var(--border-dark);
+  padding:2rem;border-radius:var(--radius);
+  background:var(--surface-dark);box-shadow:0 4px 18px #0008
 }
 #login h2{margin-bottom:1rem;text-align:center}
 #installBtn{margin-top:.6rem;width:100%}
 
 /* ───────────  WAREHOUSES  ─────────── */
-#wh header{background:var(--gray);color:#fff;padding:.9rem 1.2rem;font-size:1.3rem}
+#wh header{background:var(--gray);color:var(--text);padding:.9rem 1.2rem;font-size:1.3rem}
 #wh ul{list-style:none;padding:1rem;gap:.7rem;display:flex;flex-direction:column}
 #wh li{
-  padding:.8rem 1rem;border:1px solid #d1d5db;border-radius:8px;
-  display:flex;justify-content:space-between;align-items:center;background:#fff;
-  box-shadow:0 2px 4px #0001;cursor:pointer;user-select:none
+  padding:.8rem 1rem;border:1px solid var(--border-dark);border-radius:8px;
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--surface-dark);color:var(--text);
+  box-shadow:0 2px 4px #0004;cursor:pointer;user-select:none;
+  transition:background .2s
 }
-#wh li:hover{background:#f3f4f6}
+#wh li:hover{background:#273449}
 #wh li .actions{display:flex;gap:.4rem}
-#wh li button{pointer-events:auto}          /* ensure buttons still receive clicks */
+#wh li button{pointer-events:auto}
 
 /* ───────────  MAIN  ─────────── */
 #main header{
   display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;
-  background:var(--gray);color:#fff;padding:.8rem 1rem
+  background:var(--gray);color:var(--text);padding:.8rem 1rem
 }
 #main header input{max-width:220px}
+#main header input{background:var(--surface-dark);color:var(--text)}
 #main header span{margin-left:auto;font-weight:500}
 #delSel{display:none}
 
 /* -- compact actions menu (hamburger) -- */
 .menu-wrap{position:relative}
-#menuToggle img{width:22px;height:22px}
+#menuToggle img{width:22px;height:22px;filter:invert(1)}
 #menu{
-  position:absolute;top:110%;left:0;background:#fff;color:#111;
-  border:1px solid #d1d5db;border-radius:6px;box-shadow:0 4px 12px #0002;
+  position:absolute;top:110%;left:0;background:var(--surface-dark);color:var(--text);
+  border:1px solid var(--border-dark);border-radius:6px;box-shadow:0 4px 12px #0006;
   display:none;flex-direction:column;min-width:180px;z-index:50
 }
 #menu.show{display:flex}
 #menu button{justify-content:flex-start;width:100%;border-radius:0;background:transparent}
-#menu button:hover{background:#f3f4f6}
+#menu button:hover{background:#273449}
 
 /* -- items table wrapper -- */
 #itemsWrap{flex:1;overflow:auto}
 table{width:100%;border-collapse:collapse}
-th,td{padding:.55rem .8rem;border-bottom:1px solid #d1d5db;text-align:left;white-space:nowrap}
-tbody tr:hover{background:#eef0f2;cursor:pointer}
-th{background:#f1f5f9;position:sticky;top:0;z-index:1;cursor:pointer;user-select:none}
+th,td{
+  padding:.55rem .8rem;border-bottom:1px solid var(--border-dark);
+  text-align:left;white-space:nowrap
+}
+tbody tr:hover{background:#273449;cursor:pointer}
+th{
+  background:#1e293b;position:sticky;top:0;z-index:1;cursor:pointer;user-select:none;
+  color:var(--text)
+}
 th.sort-asc::after{content:" ▲";font-size:.75rem}
 th.sort-desc::after{content:" ▼";font-size:.75rem}
 td.qty{text-align:right;font-weight:600}
 td.qty[contenteditable]:focus{outline:2px solid var(--blue)}
 th.chk,td.chk{width:42px;text-align:center}
-.row-del{cursor:pointer}
+.row-del{cursor:pointer;filter:invert(1)}
 
 /* ───────────  FAB  ─────────── */
 #fab{
   position:fixed;right:1.2rem;bottom:1.2rem;width:60px;height:60px;
-  background:#A6CBE2;color:#fff;border:solid black;border-radius:50%;
-  display:flex;justify-content:center;align-items:center
+  background:var(--blue);color:#fff;border:none;border-radius:50%;
+  display:flex;justify-content:center;align-items:center;
+  box-shadow:0 6px 16px #000a;transition:transform .25s
 }
-#fab img{width:28px;height:28px}
+#fab img{width:28px;height:28px;filter:invert(1)}
+#fab:hover{transform:scale(1.08)}
+#fab:active{transform:scale(.95);transition:transform .05s}
 
+/* ───────────  SCAN DIALOG  ─────────── */
 #scanDlg{
-  /* keep existing styles … */
-  overflow:hidden;              
-  max-height:90vh;            
+  overflow:hidden;max-height:90vh;
 }
 #scanDlg video{
-  width:100%;                
-  height:auto;          
-  max-height:60vh;         
-  object-fit:contain;            
-  display:block;                
-  border-radius:var(--radius);    
+  width:100%;height:auto;max-height:60vh;
+  object-fit:contain;display:block;border-radius:var(--radius);
 }
 
 /* ───────────  MOBILE OVERRIDES  ─────────── */
 @media(max-width:640px){
-  /* header wraps vertically so nothing forces width */
   #main header{flex-direction:column;align-items:stretch}
   #main header > *{width:100%;max-width:100%}
-  #menu{left:20%;}
-  /* action buttons hidden on small – hamburger stays */
-  #menuToggle{align-self:flex-end;width:100%} 
+  #menu{left:20%}
+  #menuToggle{align-self:flex-end;width:100%}
   #searchInput{margin:0 auto}
 
-  /* sort‑by dropdown */
   .mobile-sort{display:block;margin:.4rem 0}
 
   /* responsive table → stacked cards */
   table{min-width:0}
   thead{display:none}
-  tbody tr{display:block;border:1px solid #d1d5db;margin:.65rem 0;border-radius:6px}
+  tbody tr{display:block;border:1px solid var(--border-dark);margin:.65rem 0;border-radius:6px}
   tbody td{
     display:flex;justify-content:space-between;align-items:center;
     padding:.65rem .8rem;border:none;white-space:normal
   }
   tbody td::before{
     content:attr(data-key);
-    font-weight:600;color:#555;text-transform:capitalize
+    font-weight:600;color:var(--text-muted);text-transform:capitalize
   }
   td.chk{display:none}
   td.qty{text-align:left}
 }
-/* desktop‑only mobile‑sort hidden */
+/* desktop-only mobile-sort hidden */
 @media(min-width:641px){
   .mobile-sort{display:none}
 }
